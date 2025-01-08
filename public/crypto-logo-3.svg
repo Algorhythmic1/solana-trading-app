@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <filter id="glow3">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Triangular base -->
+  <path d="M100 30 L160 150 L40 150 Z" 
+        fill="none" 
+        stroke="#39ff14" 
+        stroke-width="2"
+        filter="url(#glow3)"/>
+  
+  <!-- Inner triangles -->
+  <path d="M100 60 L140 140 L60 140 Z" 
+        fill="none" 
+        stroke="#ff00ff" 
+        stroke-width="1"/>
+        
+  <!-- Trading arrows -->
+  <path d="M80 90 L120 90 L110 80 M110 100 L70 100 L80 110" 
+        stroke="#39ff14" 
+        stroke-width="3"
+        filter="url(#glow3)"/>
+  
+  <!-- Circuit board traces -->
+  <path d="M40 150 H60 L70 140 H130 L140 150 H160" 
+        stroke="#39ff14" 
+        stroke-width="1" 
+        fill="none"
+        stroke-dasharray="2"/>
+  
+  <!-- Digital nodes -->
+  <circle cx="100" cy="30" r="4" fill="#39ff14"/>
+  <circle cx="40" cy="150" r="4" fill="#39ff14"/>
+  <circle cx="160" cy="150" r="4" fill="#39ff14"/>
+</svg>

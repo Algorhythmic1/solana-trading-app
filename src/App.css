@@ -1,0 +1,376 @@
+:root {
+  --glitched-duration: 0.9s;
+  --glitched-long-duration: 3s;
+  --neon-green: #39ff14;
+  --neon-green-opacity: #39ff1442;
+  --bright-green: #00ff00;
+  --dark-green: #008000;
+  --border-color: #50fc50;
+  --accent-color: #ff003c;
+  --black-color: #000;
+  --dark-bg: #0a0a0a;
+}
+
+body {
+  background-color: var(--dark-bg);
+  padding: 0;
+  margin: 0;
+  font-size: 20px;
+  color: var(--neon-green);
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+}
+
+body * {
+  font-family: "Rajdhani", "Orbitron", sans-serif;
+}
+
+/* Form fields */
+input[type="text"].cyberpunk,
+input[type="date"].cyberpunk,
+input[type="time"].cyberpunk,
+input[type="file"].cyberpunk,
+input[type="number"].cyberpunk,
+input[type="phone"].cyberpunk,
+input[type="password"].cyberpunk,
+textarea.cyberpunk,
+select.cyberpunk {
+  width: calc(100% - 30px);
+  border: 30px solid var(--black-color);
+  border-left: 5px solid var(--black-color);
+  border-right: 5px solid var(--black-color);
+  border-bottom: 15px solid var(--black-color);
+  clip-path: polygon(0px 25px, 26px 0px, calc(60% - 25px) 0px, 60% 25px, 100% 25px, 100% calc(100% - 10px), calc(100% - 15px) calc(100% - 10px), calc(80% - 10px) calc(100% - 10px), calc(80% - 15px) calc(100% - 0px), 10px calc(100% - 0px), 0% calc(100% - 10px));
+  margin-bottom: 10px;
+  padding: 12px;
+  font-size: 1.7rem;
+  font-weight: 700;
+  background-color: var(--dark-bg);
+  color: var(--neon-green);
+  box-shadow: 0 0 10px var(--neon-green);
+  transition: all 0.3s ease;
+}
+
+input[type="password"].cyberpunk {
+  font-family: 'Hacked';
+  font-style: normal;
+  font-weight: 400;
+  font-variant: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 2px;
+}
+
+textarea.cyberpunk {
+  min-height: 120px;
+  clip-path: polygon(0px 0px, 50px 0px, 75px 26px, 105px 26px, 130px 0px, calc(60% - 25px) 0px, 60% 25px, 100% 25px, 100% calc(100% - 10px), calc(100% - 15px) calc(100% - 10px), calc(80% - 10px) calc(100% - 10px), calc(80% - 15px) calc(100% - 0px), 10px calc(100% - 0px), 0% calc(100% - 10px));
+}
+
+/* Buttons */
+button.cyberpunk {
+  --text: "CTRL";
+  --background-color: var(--black-color);
+  border: none;
+  border-radius: 0%;
+  font-size: 1.5rem;
+  line-height: 1.5rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 35px 75px;
+  margin: 10px 20px 10px 0px;
+  position: relative;
+  color: var(--neon-green);
+  border-right: 3px solid var(--border-color);
+  clip-path: polygon(
+    -15px 0%,
+    calc(100% + 15px) 0%,
+    calc(100% + 15px) 100%,
+    20px 100%,
+    -15px calc(100% - 35px)
+  );
+  cursor: pointer;
+  background-color: var(--background-color);
+  outline: none;
+  box-shadow: 0 0 15px var(--neon-green);
+  transition: all 0.3s ease;
+}
+
+button.cyberpunk:hover {
+  box-shadow: 0 0 30px var(--neon-green);
+  text-shadow: 0 0 10px var(--neon-green);
+  animation: buttonGlow 1.5s infinite alternate;
+}
+
+@keyframes buttonGlow {
+  from {
+    box-shadow: 0 0 15px var(--neon-green);
+    text-shadow: 0 0 5px var(--neon-green);
+  }
+  to {
+    box-shadow: 0 0 30px var(--neon-green), 0 0 50px var(--neon-green);
+    text-shadow: 0 0 15px var(--neon-green), 0 0 25px var(--neon-green);
+  }
+}
+
+/* Headings */
+h1.cyberpunk,
+h2.cyberpunk,
+h3.cyberpunk {
+  color: var(--neon-green);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 30px;
+  text-shadow: 0 0 10px var(--neon-green);
+}
+
+h1.cyberpunk::before,
+h2.cyberpunk::before,
+h3.cyberpunk::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--neon-green);
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: 0 0 10px var(--neon-green);
+}
+
+/* Links */
+a.cyberpunk {
+  color: var(--neon-green);
+  text-decoration: none;
+  position: relative;
+  padding: 0 5px;
+  transition: all 0.3s ease;
+}
+
+a.cyberpunk::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--neon-green);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+  box-shadow: 0 0 10px var(--neon-green);
+}
+
+a.cyberpunk:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Main layout */
+.logo-container {
+  margin: 0;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--dark-bg);
+}
+
+/* Logo styles */
+.logo {
+  width: 300px;  /* Fixed width */
+  height: 300px; /* Fixed height */
+  padding: 0.5rem;
+  will-change: filter, transform;
+  transition: all 300ms ease-in-out;
+}
+
+.logo.two:hover {
+  filter: drop-shadow(0 0 1em var(--bright-green));
+  transform: scale(1.1);
+}
+
+/* Row layout */
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  width: auto;
+  margin: 0 auto;
+}
+
+.container.cyberpunk {
+  background-color: var(--dark-bg);
+  padding: 20px;
+  border: 2px solid var(--neon-green);
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 800px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  clip-path: polygon(
+    0 20px,
+    20px 0,
+    calc(100% - 20px) 0,
+    100% 20px,
+    100% calc(100% - 20px),
+    calc(100% - 20px) 100%,
+    20px 100%,
+    0 calc(100% - 20px)
+  );
+}
+
+.container.cyberpunk::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--neon-green);
+  z-index: -1;
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  background-color: var(--dark-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--neon-green);
+  border-radius: 0;
+  box-shadow: 0 0 10px var(--neon-green);
+}
+
+/* Glitch effects */
+.glitch {
+  animation: glitch-skew 1s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-skew {
+  0% {
+    transform: skew(-3deg);
+  }
+  10% {
+    transform: skew(2deg);
+  }
+  20% {
+    transform: skew(-1deg);
+  }
+  30% {
+    transform: skew(3deg);
+  }
+  40% {
+    transform: skew(-2deg);
+  }
+  50% {
+    transform: skew(1deg);
+  }
+  100% {
+    transform: skew(0);
+  }
+}
+
+/* Grid background */
+.grid-bg {
+  background-image: 
+    linear-gradient(var(--neon-green-opacity) 1px, transparent 1px),
+    linear-gradient(90deg, var(--neon-green-opacity) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center center;
+  animation: gridPulse 4s infinite alternate;
+}
+
+@keyframes gridPulse {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 0.4;
+  }
+}
+
+/* Card styles */
+.card.cyberpunk {
+  background-color: var(--dark-bg);
+  border: 2px solid var(--neon-green);
+  padding: 20px;
+  margin: 20px 0;
+  position: relative;
+  box-shadow: 0 0 20px var(--neon-green-opacity);
+  clip-path: polygon(
+    0 20px,
+    20px 0,
+    calc(100% - 20px) 0,
+    100% 20px,
+    100% calc(100% - 20px),
+    calc(100% - 20px) 100%,
+    20px 100%,
+    0 calc(100% - 20px)
+  );
+}
+
+.card.cyberpunk::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--neon-green);
+  z-index: -1;
+  filter: blur(10px);
+  opacity: 0.3;
+}
+
+/* Table styles */
+table.cyberpunk {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 20px 0;
+}
+
+table.cyberpunk th,
+table.cyberpunk td {
+  padding: 15px;
+  border: 1px solid var(--neon-green);
+  color: var(--neon-green);
+  background-color: var(--dark-bg);
+}
+
+table.cyberpunk th {
+  background-color: var(--black-color);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+table.cyberpunk tr:hover td {
+  background-color: rgba(57, 255, 20, 0.1);
+  box-shadow: 0 0 15px var(--neon-green-opacity);
+}
