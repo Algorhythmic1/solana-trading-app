@@ -1,102 +1,289 @@
-import { useState, useMemo } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import {
-  ConnectionProvider,
-  WalletProvider,
-  useWallet,
-} from '@solana/wallet-adapter-react';
-import {
-  WalletModalProvider,
-  WalletMultiButton
-} from '@solana/wallet-adapter-react-ui';
-import { clusterApiUrl } from '@solana/web3.js';
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-  TorusWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
+import { useState, useEffect} from 'react';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, useOutletContext, NavLink, useLocation } from 'react-router-dom';
+import { Keypair, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Layout, Wallet as WalletIcon, Send, History, Settings, Menu } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
+import base58 from 'bs58';
 
-// Import wallet adapter CSS
-import '@solana/wallet-adapter-react-ui/styles.css';
-import "./App.css";
+// Helper functions for keyring operations
+const saveWalletToKeyring = async (keypair: Keypair) => {
+  // Convert the keypair's secret key to a base58 string for storage
+  const secretKeyString = base58.encode(keypair.secretKey);
+  await invoke('save_to_keyring', { key: secretKeyString });
+};
 
-function App() {
-  // You can use Mainnet, Testnet, or Devnet
-  const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
+const loadWalletFromKeyring = async (): Promise<Keypair | null> => {
+  try {
+    const secretKeyString = await invoke<string>('load_from_keyring');
+    const secretKey = base58.decode(secretKeyString);
+    return Keypair.fromSecretKey(secretKey);
+  } catch (error) {
+    console.log('No wallet found in keyring');
+    return null;
+  }
+};
 
-  // Initialize supported wallet adapters
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-      new TorusWalletAdapter(),
-    ],
-    []
-  );
+// Type for the outlet context
+type ContextType = {
+  wallet: Keypair;
+  setWallet: (wallet: Keypair | null) => void;
+};
+
+// Sidebar navigation items
+const navigationItems = [
+  { name: 'Dashboard', path: '/dashboard', icon: Layout },
+  { name: 'Send', path: '/send', icon: Send },
+  { name: 'History', path: '/history', icon: History },
+  { name: 'Settings', path: '/settings', icon: Settings },
+];
+
+// Sidebar component
+const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: { 
+  isMobileMenuOpen: boolean, 
+  setIsMobileMenuOpen: (open: boolean) => void 
+}) => {
+  const location = useLocation();
+
+  const NavItem = ({ item }: { item: typeof navigationItems[0] }) => {
+    const Icon = item.icon;
+    const isActive = location.pathname === item.path;
+    
+    return (
+      <NavLink
+        to={item.path}
+        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+          isActive 
+            ? 'bg-blue-500/20 text-blue-400' 
+            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <Icon size={20} />
+        <span>{item.name}</span>
+      </NavLink>
+    );
+  };
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          <AppContent />
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <>
+      {/* Mobile backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 lg:hidden z-20"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed top-0 bottom-0 left-0 z-30
+        w-64 bg-gray-900 border-r border-gray-700
+        transform transition-transform duration-200 ease-in-out
+        lg:translate-x-0 lg:static
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <WalletIcon className="text-blue-500" />
+            <span className="font-bold text-lg">Solana Wallet</span>
+          </div>
+        </div>
+        <nav className="p-4 space-y-2">
+          {navigationItems.map((item) => (
+            <NavItem key={item.path} item={item} />
+          ))}
+        </nav>
+      </aside>
+    </>
   );
-}
+};
 
-function AppContent() {
-  const { publicKey, connected } = useWallet();
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+// Layout component that wraps all authenticated pages
+const AuthenticatedLayout = ({ wallet, setWallet }: { wallet: Keypair | null, setWallet: (wallet: Keypair | null) => void }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  async function greet() {
-    setGreetMsg(await invoke("greet", { name }));
+  if (!wallet) {
+    return <Navigate to="/" replace />;
   }
 
   return (
-    <main className="logo-container">
-      <h1>Welcome to permissionless finance. Use at your own risk. </h1>
-      <h3>(Don't use if you don't understand what you're doing)</h3>
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Top navbar */}
+      <nav className="bg-gray-800 border-b border-gray-700 px-4 py-3 lg:hidden">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-1 rounded hover:bg-gray-700"
+          >
+            <Menu size={24} />
+          </button>
+          <button
+            onClick={() => setWallet(null)}
+            className="px-3 py-1 text-sm rounded bg-red-500/10 text-red-300 hover:bg-red-500/20"
+          >
+            Disconnect
+          </button>
+        </div>
+      </nav>
 
-      <div className="row">
-        <a target="_blank">
-          <img 
-            src="/crypto-logo-2.svg" 
-            className="logo two" 
-            alt="Crypto logo one" 
-          />
-        </a>
-      </div>
-
-      <div className="wallet-section">
-        <WalletMultiButton />
-        {connected && (
-          <p className="wallet-address">
-            Connected: {publicKey?.toBase58()}
-          </p>
-        )}
-      </div>
-
-      <p>Connect your wallet to begin</p>
- 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+      {/* Main layout with sidebar */}
+      <div className="flex h-screen lg:h-auto">
+        <Sidebar 
+          isMobileMenuOpen={isMobileMenuOpen} 
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+        <main className="flex-1 p-6 lg:p-8 overflow-auto">
+          <div className="max-w-6xl mx-auto">
+            <div className="hidden lg:flex justify-end mb-6">
+              <button
+                onClick={() => setWallet(null)}
+                className="px-3 py-1 text-sm rounded bg-red-500/10 text-red-300 hover:bg-red-500/20"
+              >
+                Disconnect
+              </button>
+            </div>
+            <Outlet context={{ wallet, setWallet }} />
+          </div>
+        </main>
+      </div>
+    </div>
   );
-}
+};
+
+// Welcome page with wallet setup
+const WelcomePage = ({ setWallet }: { setWallet: (wallet: Keypair | null) => void }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const createWallet = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const newWallet = Keypair.generate();
+      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+      const airdropSignature = await connection.requestAirdrop(
+        newWallet.publicKey,
+        LAMPORTS_PER_SOL
+      );
+      await connection.confirmTransaction(airdropSignature);
+      await setWallet(newWallet);  // This will now persist to keyring
+    } catch (error) {
+      console.error('Failed to create wallet:', error);
+      setError('Failed to create wallet. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-20 p-6 rounded-lg bg-gray-800 border border-gray-700">
+      <h1 className="text-2xl font-bold mb-4">Welcome to Solana Wallet</h1>
+      {error && <p className="text-red-400 mb-4">{error}</p>}
+      <p className="text-gray-300 mb-6">
+        To get started, create a new wallet on Solana devnet.
+      </p>
+      <button
+        onClick={createWallet}
+        disabled={loading}
+        className="w-full py-2 px-4 rounded bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:from-blue-600 hover:to-purple-600 disabled:opacity-50"
+      >
+        {loading ? 'Creating Wallet...' : 'Create New Wallet'}
+      </button>
+    </div>
+  );
+};
+
+// Dashboard page showing wallet info and actions
+const DashboardPage = () => {
+  const { wallet } = useOutletContext<ContextType>();
+  
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="p-4 rounded-lg bg-gray-800 border border-gray-700">
+          <h2 className="text-lg font-semibold mb-2">Wallet Details</h2>
+          <div className="text-sm text-gray-300 break-all">
+            <p>Public Key: {wallet.publicKey.toString()}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Create router configuration
+const createRouter = (wallet: Keypair | null, setWallet: (wallet: Keypair | null) => void) => 
+  createBrowserRouter([
+    {
+      path: '/',
+      element: !wallet ? (
+        <WelcomePage setWallet={setWallet} />
+      ) : (
+        <Navigate to="/dashboard" replace />
+      ),
+    },
+    {
+      element: <AuthenticatedLayout wallet={wallet} setWallet={setWallet} />,
+      children: [
+        {
+          path: 'dashboard',
+          element: <DashboardPage />,
+        },
+        // Placeholder pages - you can replace these with actual components
+        {
+          path: 'send',
+          element: <div className="p-4">Send Page</div>,
+        },
+        {
+          path: 'history',
+          element: <div className="p-4">Transaction History Page</div>,
+        },
+        {
+          path: 'settings',
+          element: <div className="p-4">Settings Page</div>,
+        },
+      ],
+    },
+  ]);
+
+// Main App component
+const App = () => {
+  const [wallet, setWallet] = useState<Keypair | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Try to load wallet on startup
+  useEffect(() => {
+    loadWalletFromKeyring()
+      .then(loadedWallet => {
+        if (loadedWallet) setWallet(loadedWallet);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Wrap the setWallet function to persist changes
+  const handleSetWallet = async (newWallet: Keypair | null) => {
+    if (newWallet) {
+      await saveWalletToKeyring(newWallet);
+    } else {
+      // When disconnecting, try to clear the keyring
+      try {
+        await invoke('save_to_keyring', { key: '' });
+      } catch (error) {
+        console.error('Failed to clear keyring:', error);
+      }
+    }
+    setWallet(newWallet);
+  };
+
+  const router = createRouter(wallet, handleSetWallet);
+
+  if (loading) {
+    return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+      Loading...
+    </div>;
+  }
+
+  return <RouterProvider router={router} />;
+};
 
 export default App;
