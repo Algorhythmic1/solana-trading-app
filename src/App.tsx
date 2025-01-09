@@ -1,4 +1,4 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet, useOutletContext, NavLink, useLocation } from 'react-router-dom';
 import { Keypair, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Layout, Wallet as WalletIcon, Send, History, Settings, Menu } from 'lucide-react';
@@ -7,9 +7,15 @@ import base58 from 'bs58';
 
 // Helper functions for keyring operations
 const saveWalletToKeyring = async (keypair: Keypair) => {
-  // Convert the keypair's secret key to a base58 string for storage
-  const secretKeyString = base58.encode(keypair.secretKey);
-  await invoke('save_to_keyring', { key: secretKeyString });
+  try {
+    const secretKeyString = base58.encode(keypair.secretKey);
+    console.log('Attempting to save to keyring:', secretKeyString.slice(0, 10) + '...');
+    await invoke('save_to_keyring', { key: secretKeyString });
+    console.log('Successfully saved to keyring');
+  } catch (error) {
+    console.error('Failed to save to keyring:', error);
+    throw error;
+  }
 };
 
 const loadWalletFromKeyring = async (): Promise<Keypair | null> => {
@@ -159,25 +165,44 @@ const WelcomePage = ({ setWallet }: { setWallet: (wallet: Keypair | null) => voi
     setLoading(true);
     setError(null);
     try {
+      console.log('Starting wallet creation...');
       const newWallet = Keypair.generate();
-      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+      console.log('Wallet generated:', newWallet.publicKey.toString());
+      
+      console.log('Connecting to devnet...');
+      const connection = new Connection(
+        'https://api.devnet.solana.com', 
+        'confirmed'
+      );
+      
+      console.log('Requesting airdrop...');
       const airdropSignature = await connection.requestAirdrop(
         newWallet.publicKey,
         LAMPORTS_PER_SOL
-      );
-      await connection.confirmTransaction(airdropSignature);
-      await setWallet(newWallet);  // This will now persist to keyring
+      ).catch(err => {
+        console.error('Airdrop request failed:', err);
+        throw new Error('Failed to request SOL airdrop');
+      });
+
+      console.log('Confirming airdrop transaction...');
+      await connection.confirmTransaction(airdropSignature, 'confirmed');
+      
+      console.log('Setting wallet in state...');
+      await setWallet(newWallet);
+      
+      console.log('Wallet creation complete');
     } catch (error) {
-      console.error('Failed to create wallet:', error);
-      setError('Failed to create wallet. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Failed to create wallet:', errorMessage);
+      setError(`Failed to create wallet: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="max-w-md mx-auto mt-20 p-6 rounded-lg bg-gray-800 border border-gray-700">
       <h1 className="text-2xl font-bold mb-4">Welcome to Solana Wallet</h1>
-      {error && <p className="text-red-400 mb-4">{error}</p>}
       <p className="text-gray-300 mb-6">
         To get started, create a new wallet on Solana devnet.
       </p>
@@ -188,6 +213,11 @@ const WelcomePage = ({ setWallet }: { setWallet: (wallet: Keypair | null) => voi
       >
         {loading ? 'Creating Wallet...' : 'Create New Wallet'}
       </button>
+      {error && (
+        <p className="mt-4 text-red-400 text-sm">
+          {error}
+        </p>
+      )}
     </div>
   );
 };
@@ -251,13 +281,32 @@ const App = () => {
   const [wallet, setWallet] = useState<Keypair | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Try to load wallet on startup
+  // Add a ref to track if we've already tried loading
+  const hasTriedLoading = useRef(false);
+
   useEffect(() => {
-    loadWalletFromKeyring()
-      .then(loadedWallet => {
-        if (loadedWallet) setWallet(loadedWallet);
-      })
-      .finally(() => setLoading(false));
+    const loadWallet = async () => {
+      // Prevent multiple loads
+      if (hasTriedLoading.current) return;
+      hasTriedLoading.current = true;
+
+      try {
+        console.log('Attempting initial wallet load...');
+        const loadedWallet = await loadWalletFromKeyring();
+        if (loadedWallet) {
+          console.log('Wallet loaded successfully');
+          setWallet(loadedWallet);
+        } else {
+          console.log('No wallet found in keyring');
+        }
+      } catch (error) {
+        console.error('Error loading wallet:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWallet();
   }, []);
 
   // Wrap the setWallet function to persist changes

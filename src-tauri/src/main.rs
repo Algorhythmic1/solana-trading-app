@@ -16,15 +16,29 @@ impl From<keyring::Error> for KeyringError {
 
 #[tauri::command]
 async fn save_to_keyring(key: String) -> Result<(), KeyringError> {
-    let entry = Entry::new("solana-wallet", "primary")?;
-    entry.set_password(&key)?;
+    println!("Starting save_to_keyring...");
+    println!("Creating keyring entry...");
+    let entry: Entry = Entry::new("solana-wallet", "primary").map_err(|e| {
+        println!("Failed to create entry: {}", e);
+        e
+    })?;
+    
+    println!("Setting password...");
+    entry.set_password(&key).map_err(|e| {
+        println!("Failed to set password: {}", e);
+        e
+    })?;
+    
+    println!("Successfully saved to keyring");
     Ok(())
 }
 
 #[tauri::command]
 async fn load_from_keyring() -> Result<String, KeyringError> {
-    let entry = Entry::new("solana-wallet", "primary")?;
-    let password = entry.get_password()?;
+    println!("Attempting to load from keyring...");
+    let entry: Entry = Entry::new("solana-wallet", "primary")?;
+    let password: String = entry.get_password()?;
+    println!("Successfully loaded from keyring");
     Ok(password)
 }
 
