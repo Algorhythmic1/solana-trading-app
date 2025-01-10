@@ -7,7 +7,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { NETWORKS } from './constants/networks';
 
 // Import utils
-import { loadWalletFromKeyring, saveWalletToKeyring } from './utils/wallet';
+import { saveWalletToKeyring } from './utils/wallet';
 
 // Import components
 import { AuthenticatedLayout } from './components/layout/AuthenticatedLayout';
@@ -33,21 +33,19 @@ const createRouter = (
   createBrowserRouter([
     {
       path: '/',
-      element: !wallet ? (
-        <WelcomePage setWallet={setWallet} />
-      ) : (
-        <Navigate to="/dashboard" replace />
-      ),
+      element: <WelcomePage setWallet={setWallet} />, // Remove the conditional here
       errorElement: <ErrorBoundary />
     },
     {
-      element: (
+      element: wallet ? ( // Add conditional here instead
         <AuthenticatedLayout 
           wallet={wallet} 
           setWallet={setWallet}
           selectedNetwork={selectedNetwork}
           setSelectedNetwork={setSelectedNetwork}
         />
+      ) : (
+        <Navigate to="/" replace />
       ),
       children: [
         {
@@ -81,35 +79,27 @@ const App = () => {
   const hasTriedLoading = useRef(false);
 
   useEffect(() => {
-    const loadWallet = async () => {
+    const loadInitialState = async () => {
       // Prevent multiple loads
       if (hasTriedLoading.current) return;
       hasTriedLoading.current = true;
 
       try {
-        console.log('Attempting initial wallet load...');
-        const loadedWallet = await loadWalletFromKeyring();
-        if (loadedWallet) {
-          console.log('Wallet loaded successfully');
-          setWallet(loadedWallet);
-        } else {
-          console.log('No wallet found in keyring');
-        }
+        setLoading(false); // We'll move this earlier since we don't auto-connect anymore
       } catch (error) {
-        console.error('Error loading wallet:', error);
-      } finally {
+        console.error('Error loading initial state:', error);
         setLoading(false);
       }
     };
 
-    loadWallet();
+    loadInitialState();
   }, []);
 
   // Wrap the setWallet function to persist changes
-  const handleSetWallet = async (newWallet: Keypair | null) => {
-    if (newWallet) {
+  const handleSetWallet = async (newWallet: Keypair | null, shouldSave: boolean = false) => {
+    if (newWallet && shouldSave) {
       await saveWalletToKeyring(newWallet);
-    } else {
+    } else if (!newWallet) {
       // When disconnecting, try to clear the keyring
       try {
         await invoke('save_to_keyring', { key: '' });
