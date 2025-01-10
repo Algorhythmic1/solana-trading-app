@@ -5,10 +5,26 @@ import { clusterApiUrl } from '@solana/web3.js';
 import { NetworkInfo } from '../types';
 
 export const NETWORKS: NetworkInfo[] = [
-  { name: 'localnet', endpoint: 'http://127.0.0.1:8899' },
-  { name: 'devnet', endpoint: clusterApiUrl('devnet') },
-  { name: 'testnet', endpoint: clusterApiUrl('testnet') },
-  { name: 'mainnet-beta', endpoint: 'https://mainnet.helius-rpc.com/?api-key=34ff2ba3-5858-43cc-a351-b2cf9b3420fb' }
+  { 
+    name: 'localnet', 
+    endpoint: 'http://127.0.0.1:8899',
+    cluster: 'devnet' // fallback for clusterApiUrl
+  },
+  { 
+    name: 'devnet', 
+    endpoint: clusterApiUrl('devnet'),
+    cluster: 'devnet'
+  },
+  { 
+    name: 'testnet', 
+    endpoint: clusterApiUrl('testnet'),
+    cluster: 'testnet'
+  },
+  { 
+    name: 'mainnet-beta', 
+    endpoint: 'https://mainnet.helius-rpc.com/?api-key=34ff2ba3-5858-43cc-a351-b2cf9b3420fb',
+    cluster: 'mainnet-beta'
+  }
 ];
 
 export const navigationItems = [

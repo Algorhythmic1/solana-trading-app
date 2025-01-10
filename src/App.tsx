@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import { Keypair } from '@solana/web3.js';
+import { Keypair, Connection } from '@solana/web3.js';
 import { invoke } from '@tauri-apps/api/core';
 
 // Import constants
@@ -17,8 +17,8 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { WelcomePage } from './pages/Welcome';
 import { DashboardPage } from './pages/Dashboard';
 import { SendPage } from './pages/Send';
-import { HistoryPage } from './pages/History';
-import { SettingsPage } from './pages/Settings';
+//import { HistoryPage } from './pages/History';
+//import { SettingsPage } from './pages/Settings';
 
 // Import types
 import type { NetworkInfo } from './types';
@@ -28,21 +28,23 @@ const createRouter = (
   wallet: Keypair | null, 
   setWallet: (wallet: Keypair | null) => void,
   selectedNetwork: NetworkInfo,
-  setSelectedNetwork: (network: NetworkInfo) => void
+  setSelectedNetwork: (network: NetworkInfo) => void,
+  connection: Connection
 ) => 
   createBrowserRouter([
     {
       path: '/',
-      element: <WelcomePage setWallet={setWallet} />, // Remove the conditional here
+      element: <WelcomePage setWallet={setWallet} />,
       errorElement: <ErrorBoundary />
     },
     {
-      element: wallet ? ( // Add conditional here instead
+      element: wallet ? (
         <AuthenticatedLayout 
           wallet={wallet} 
           setWallet={setWallet}
           selectedNetwork={selectedNetwork}
           setSelectedNetwork={setSelectedNetwork}
+          connection={connection}
         />
       ) : (
         <Navigate to="/" replace />
@@ -55,19 +57,10 @@ const createRouter = (
         },
         {
           path: 'send',
-          element: <SendPage />,
+          element: <SendPage wallet={wallet} connection={connection} />,
           errorElement: <ErrorBoundary />
         },
-        {
-          path: 'history',
-          element: <HistoryPage />,
-          errorElement: <ErrorBoundary />
-        },
-        {
-          path: 'settings',
-          element: <SettingsPage />,
-          errorElement: <ErrorBoundary />
-        }
+        // ... other routes ...
       ],
     },
   ]);
@@ -76,7 +69,16 @@ const App = () => {
   const [wallet, setWallet] = useState<Keypair | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkInfo>(NETWORKS[0]);
+  const [connection, setConnection] = useState<Connection>(
+    new Connection(selectedNetwork.endpoint)
+  );
   const hasTriedLoading = useRef(false);
+
+  // Update connection when network changes
+  useEffect(() => {
+    const newConnection = new Connection(selectedNetwork.endpoint);
+    setConnection(newConnection);
+  }, [selectedNetwork]);
 
   useEffect(() => {
     const loadInitialState = async () => {
@@ -110,7 +112,13 @@ const App = () => {
     setWallet(newWallet);
   };
 
-  const router = createRouter(wallet, handleSetWallet, selectedNetwork, setSelectedNetwork);
+  const router = createRouter(
+    wallet, 
+    handleSetWallet, 
+    selectedNetwork,
+    setSelectedNetwork,
+    connection
+  );
 
   if (loading) {
     return (

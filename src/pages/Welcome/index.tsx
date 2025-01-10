@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import base58 from 'bs58';
 import { useNavigate } from 'react-router-dom';
 
+
 const ACCOUNT_NAME = 'wallet-key';
 
 interface WelcomePageProps {
