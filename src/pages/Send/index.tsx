@@ -126,7 +126,7 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
     <div className="container mx-auto p-8">
       <h1 className="text-[#39ff14] text-2xl mb-8">Send SOL</h1>
       
-      <form onSubmit={handleSubmit} className="max-w-md space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
         <div>
           <label className="block text-[#39ff14] mb-2">
             Recipient Address

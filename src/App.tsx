@@ -17,7 +17,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { WelcomePage } from './pages/Welcome';
 import { DashboardPage } from './pages/Dashboard';
 import { SendPage } from './pages/Send';
-//import { HistoryPage } from './pages/History';
+import { HistoryPage } from './pages/History';
 //import { SettingsPage } from './pages/Settings';
 
 // Import types
@@ -58,6 +58,11 @@ const createRouter = (
         {
           path: 'send',
           element: <SendPage wallet={wallet} connection={connection} />,
+          errorElement: <ErrorBoundary />
+        },
+        {
+          path: 'history',
+          element: <HistoryPage wallet={wallet} connection={connection} />,
           errorElement: <ErrorBoundary />
         },
         // ... other routes ...

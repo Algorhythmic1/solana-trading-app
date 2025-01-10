@@ -101,7 +101,8 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
   };
 
   return (
-    <div className="container cyberpunk grid-bg min-h-screen p-8">
+  <div className="h-full w-full overflow-auto p-4 grid-bg">
+    <div className="container cyberpunk max-w-full">
       <h1 className="cyberpunk text-[#39ff14] text-center mb-8">Welcome to SOL Edge</h1>
       
       <div className="mb-8">
@@ -109,7 +110,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
         {storedWallets.length === 0 ? (
           <p className="text-gray-400 text-center">No stored wallets found</p>
         ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2 max-h-64 overflow-y-auto">
             {storedWallets.map((wallet) => (
               <button
                 key={wallet.public_key}
@@ -167,5 +168,5 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
         </p>
       )}
     </div>
-  );
-};
+  </div>
+)};

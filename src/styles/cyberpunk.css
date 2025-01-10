@@ -20,7 +20,7 @@ select.cyberpunk {
   font-weight: 700;
   background-color: var(--dark-bg);
   color: var(--neon-green);
-  box-shadow: 0 0 10px var(--neon-green);
+  box-shadow: 0 0 5px var(--neon-green);  /* Reduced glow, no animation */
   transition: all 0.3s ease;
 }
 
@@ -148,22 +148,20 @@ a.cyberpunk:hover::after {
   transform: scale(1.1);
 }
 
-
 .container.cyberpunk {
-  background-color: var(--dark-bg);
+  position: relative;
+  z-index: 1;
+  background-color: transparent; /* Changed from var(--dark-bg) */
   padding: 20px;
   border: 2px solid var(--neon-green);
-  position: relative;
   margin: 0 auto;
   width: 100%;
-  /* Remove min-height: 100vh; or replace with: */
   min-height: fit-content;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
-  /* ... rest of your styles ... */
 }
 
 .container.cyberpunk::before {
@@ -177,6 +175,12 @@ a.cyberpunk:hover::after {
   z-index: -1;
   filter: blur(10px);
   opacity: 0.2;
+}
+
+/* Ensure content stays above grid */
+.container.cyberpunk > * {
+  position: relative;
+  z-index: 2;
 }
 
 /* Scrollbar */
@@ -222,10 +226,10 @@ a.cyberpunk:hover::after {
 
 @keyframes gridPulse {
   from {
-    opacity: 0.5;
+    opacity: 0.2;
   }
   to {
-    opacity: 0.7;
+    opacity: 0.8;
   }
 }
 

@@ -57,7 +57,13 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
       // Fetch transaction details
       const parsedTxns = await Promise.all(
         signatures.map(async (sig) => {
-          const tx = await connection.getParsedTransaction(sig.signature, 'confirmed');
+          const tx = await connection.getParsedTransaction(
+            sig.signature, 
+            {
+              commitment: 'confirmed',
+              maxSupportedTransactionVersion: 0
+            }
+          );
           return parseTx(tx, sig, wallet.publicKey);
         })
       );
@@ -101,8 +107,11 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
   };
 
   useEffect(() => {
+    setTransactions([]);
+    setLastSignature(null);
+    setHasMore(true);
     fetchTransactions();
-  }, [wallet.publicKey.toString()]);
+  }, [wallet.publicKey.toString(), connection.rpcEndpoint]);
 
   const loadMore = () => {
     if (lastSignature) {
