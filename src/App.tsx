@@ -1,9 +1,89 @@
 import { useState, useEffect, useRef } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate, Outlet, useOutletContext, NavLink, useLocation } from 'react-router-dom';
-import { Keypair, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Layout, Wallet as WalletIcon, Send, History, Settings, Menu } from 'lucide-react';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, useOutletContext, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Keypair, Connection, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
+import { Wallet as WalletIcon, Send, History, Settings, Layout } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import base58 from 'bs58';
+import ErrorBoundary from './ErrorBoundary';
+import './App.css';
+
+type Network = 'localnet' | 'devnet' | 'testnet' | 'mainnet-beta';
+
+interface NetworkInfo {
+  name: Network;
+  endpoint: string;
+}
+
+const NETWORKS: NetworkInfo[] = [
+  { name: 'localnet', endpoint: 'http://127.0.0.1:8899' },
+  { name: 'devnet', endpoint: clusterApiUrl('devnet') },
+  { name: 'testnet', endpoint: clusterApiUrl('testnet') },
+  { name: 'mainnet-beta', endpoint: 'https://mainnet.helius-rpc.com/?api-key=34ff2ba3-5858-43cc-a351-b2cf9b3420fb' }
+];
+
+interface NetworkSelectorProps {
+  selectedNetwork: NetworkInfo;
+  onNetworkChange: (network: NetworkInfo) => void;
+}
+
+const NetworkSelector = ({ selectedNetwork, onNetworkChange }: NetworkSelectorProps) => {
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+
+  useEffect(() => {
+    const checkConnection = async () => {
+      setConnectionStatus('checking');
+      
+      try {
+        console.log(`Checking connection to ${selectedNetwork.name}...`);
+        const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
+        const version = await connection.getVersion();
+        console.log(`Connected to ${selectedNetwork.name}:`, version);
+        setConnectionStatus('connected');
+      } catch (error) {
+        console.error(`Failed to connect to ${selectedNetwork.name}:`, error);
+        setConnectionStatus('error');
+      }
+    };
+
+    checkConnection();
+  }, [selectedNetwork]);
+
+  return (
+<div className="flex items-center gap-4 p-4 bg-[#0a0a0a] border-2 border-[#39ff14] rounded">
+  <select
+    value={selectedNetwork.name}
+    onChange={(e) => {
+      const network = NETWORKS.find(n => n.name === e.target.value as Network);
+      if (network) onNetworkChange(network);
+    }}
+    className="cyberpunk px-2 py-1 bg-transparent text-[#39ff14] border-none focus:outline-none"
+  >
+    {NETWORKS.map(network => (
+      <option key={network.name} value={network.name} className="bg-[#0a0a0a]">
+        {network.name.charAt(0).toUpperCase() + network.name.slice(1)}
+      </option>
+    ))}
+  </select>
+  
+  <div className="flex items-center gap-2">
+    <div 
+      className={`w-2.5 h-2.5 rounded-full ${
+        connectionStatus === 'checking' ? 'animate-pulse bg-[#39ff14]/50' :
+        connectionStatus === 'connected' ? 'bg-[#39ff14] shadow-[0_0_10px_#39ff14]' :
+        'bg-red-500 shadow-[0_0_10px_#ff0000]'
+      }`} 
+    />
+    <span className="text-[#39ff14]">
+      {connectionStatus === 'checking' ? 'Connecting...' :
+       connectionStatus === 'connected' ? 'Connected' :
+       'Disconnected'}
+    </span>
+  </div>
+</div>
+  );
+};
+
+export { NetworkSelector, type Network, type NetworkInfo, NETWORKS };
 
 // Helper functions for keyring operations
 const saveWalletToKeyring = async (keypair: Keypair) => {
@@ -20,11 +100,14 @@ const saveWalletToKeyring = async (keypair: Keypair) => {
 
 const loadWalletFromKeyring = async (): Promise<Keypair | null> => {
   try {
+    console.log('Attempting to load from keyring...');
     const secretKeyString = await invoke<string>('load_from_keyring');
+    console.log('Got key from keyring:', secretKeyString.slice(0, 10) + '...');
     const secretKey = base58.decode(secretKeyString);
+    console.log('Decoded key length:', secretKey.length);
     return Keypair.fromSecretKey(secretKey);
   } catch (error) {
-    console.log('No wallet found in keyring');
+    console.log('Error loading from keyring:', error);
     return null;
   }
 };
@@ -33,9 +116,10 @@ const loadWalletFromKeyring = async (): Promise<Keypair | null> => {
 type ContextType = {
   wallet: Keypair;
   setWallet: (wallet: Keypair | null) => void;
+  selectedNetwork: NetworkInfo;
 };
 
-// Sidebar navigation items
+// Add back the navigation items
 const navigationItems = [
   { name: 'Dashboard', path: '/dashboard', icon: Layout },
   { name: 'Send', path: '/send', icon: Send },
@@ -43,7 +127,7 @@ const navigationItems = [
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
-// Sidebar component
+// Add back the Sidebar component
 const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: { 
   isMobileMenuOpen: boolean, 
   setIsMobileMenuOpen: (open: boolean) => void 
@@ -59,8 +143,8 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: {
         to={item.path}
         className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
           isActive 
-            ? 'bg-blue-500/20 text-blue-400' 
-            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+            ? 'bg-[#39ff14]/20 text-[#39ff14]' 
+            : 'text-gray-400 hover:bg-gray-800 hover:text-[#39ff14]'
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
       >
@@ -83,15 +167,15 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: {
       {/* Sidebar */}
       <aside className={`
         fixed top-0 bottom-0 left-0 z-30
-        w-64 bg-gray-900 border-r border-gray-700
+        w-64 bg-[#0a0a0a] border-r-2 border-[#39ff14]
         transform transition-transform duration-200 ease-in-out
         lg:translate-x-0 lg:static
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b-2 border-[#39ff14]">
           <div className="flex items-center gap-2">
-            <WalletIcon className="text-blue-500" />
-            <span className="font-bold text-lg">Solana Wallet</span>
+            <WalletIcon className="text-[#39ff14]" />
+            <span className="font-bold text-lg text-[#39ff14]">SOLedge Trading</span>
           </div>
         </div>
         <nav className="p-4 space-y-2">
@@ -104,52 +188,57 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: {
   );
 };
 
-// Layout component that wraps all authenticated pages
-const AuthenticatedLayout = ({ wallet, setWallet }: { wallet: Keypair | null, setWallet: (wallet: Keypair | null) => void }) => {
+// Modify AuthenticatedLayout to use the mobile menu
+const AuthenticatedLayout = ({ 
+  wallet, 
+  setWallet,
+  selectedNetwork,
+  setSelectedNetwork 
+}: { 
+  wallet: Keypair | null, 
+  setWallet: (wallet: Keypair | null) => void,
+  selectedNetwork: NetworkInfo,
+  setSelectedNetwork: (network: NetworkInfo) => void
+}) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();  // Add this
+
+  const handleDisconnect = async () => {
+    await setWallet(null);
+    navigate('/', { replace: true });  // Explicitly navigate
+  };
 
   if (!wallet) {
     return <Navigate to="/" replace />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Top navbar */}
-      <nav className="bg-gray-800 border-b border-gray-700 px-4 py-3 lg:hidden">
+    <div className="min-h-screen grid-bg">
+      <nav className="bg-[#0a0a0a] border-b-2 border-[#39ff14] px-4 py-3">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-1 rounded hover:bg-gray-700"
-          >
-            <Menu size={24} />
-          </button>
-          <button
-            onClick={() => setWallet(null)}
-            className="px-3 py-1 text-sm rounded bg-red-500/10 text-red-300 hover:bg-red-500/20"
-          >
-            Disconnect
-          </button>
+          {/* ... other nav items ... */}
+          <div className="flex items-center gap-4">
+            <NetworkSelector
+              selectedNetwork={selectedNetwork}
+              onNetworkChange={setSelectedNetwork}
+            />
+            <button
+              onClick={handleDisconnect}  // Use the new handler
+              className="cyberpunk"
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
       </nav>
-
-      {/* Main layout with sidebar */}
+      
       <div className="flex h-screen lg:h-auto">
         <Sidebar 
           isMobileMenuOpen={isMobileMenuOpen} 
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
-        <main className="flex-1 p-6 lg:p-8 overflow-auto">
-          <div className="max-w-6xl mx-auto">
-            <div className="hidden lg:flex justify-end mb-6">
-              <button
-                onClick={() => setWallet(null)}
-                className="px-3 py-1 text-sm rounded bg-red-500/10 text-red-300 hover:bg-red-500/20"
-              >
-                Disconnect
-              </button>
-            </div>
-            <Outlet context={{ wallet, setWallet }} />
-          </div>
+        <main className="flex-1 p-6 lg:p-8">
+          <Outlet context={{ wallet, setWallet, selectedNetwork }} />
         </main>
       </div>
     </div>
@@ -160,61 +249,134 @@ const AuthenticatedLayout = ({ wallet, setWallet }: { wallet: Keypair | null, se
 const WelcomePage = ({ setWallet }: { setWallet: (wallet: Keypair | null) => void }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [privateKey, setPrivateKey] = useState('');
+  const [storedWallets, setStoredWallets] = useState<{ public_key: string }[]>([]);
+
+  // Load stored wallets on component mount
+  useEffect(() => {
+    const loadStoredWallets = async () => {
+      try {
+        const wallets = await invoke<{ public_key: string }[]>('list_stored_wallets');
+        setStoredWallets(wallets);
+      } catch (error) {
+        console.error('Failed to load stored wallets:', error);
+      }
+    };
+    loadStoredWallets();
+  }, []);
+
+  const loadSelectedWallet = async (publicKey: string) => {
+    setLoading(true);
+    try {
+      const walletData = await invoke<string>('load_from_keyring', { publicKey });
+      const secretKey = base58.decode(walletData);
+      const keypair = Keypair.fromSecretKey(secretKey);
+      
+      // Verify the public key matches
+      if (keypair.publicKey.toString() === publicKey) {
+        await setWallet(keypair);
+      } else {
+        throw new Error('Public key mismatch');
+      }
+    } catch (error) {
+      setError('Failed to load selected wallet');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const importWallet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const secretKey = base58.decode(privateKey);
+      if (secretKey.length !== 64) {
+        throw new Error('Invalid private key length');
+      }
+      
+      const importedWallet = Keypair.fromSecretKey(secretKey);
+      await setWallet(importedWallet);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Invalid private key format';
+      setError(`Failed to import wallet: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+      setPrivateKey('');
+    }
+  };
 
   const createWallet = async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Starting wallet creation...');
       const newWallet = Keypair.generate();
-      console.log('Wallet generated:', newWallet.publicKey.toString());
-      
-      console.log('Connecting to devnet...');
-      const connection = new Connection(
-        'https://api.devnet.solana.com', 
-        'confirmed'
-      );
-      
-      console.log('Requesting airdrop...');
-      const airdropSignature = await connection.requestAirdrop(
-        newWallet.publicKey,
-        LAMPORTS_PER_SOL
-      ).catch(err => {
-        console.error('Airdrop request failed:', err);
-        throw new Error('Failed to request SOL airdrop');
-      });
-
-      console.log('Confirming airdrop transaction...');
-      await connection.confirmTransaction(airdropSignature, 'confirmed');
-      
-      console.log('Setting wallet in state...');
       await setWallet(newWallet);
-      
-      console.log('Wallet creation complete');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Failed to create wallet:', errorMessage);
-      setError(`Failed to create wallet: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create wallet';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 rounded-lg bg-gray-800 border border-gray-700">
-      <h1 className="text-2xl font-bold mb-4">Welcome to Solana Wallet</h1>
-      <p className="text-gray-300 mb-6">
-        To get started, create a new wallet on Solana devnet.
-      </p>
+    <div className="container cyberpunk grid-bg min-h-screen p-8">
+      <h1 className="cyberpunk text-[#39ff14] text-center mb-8">Welcome to SOL Edge</h1>
+      
+      {storedWallets.length > 0 && (
+        <div className="mb-8">
+          <h2 className="cyberpunk text-[#39ff14] mb-4">Stored Wallets</h2>
+          <div className="space-y-2">
+            {storedWallets.map((wallet) => (
+              <button
+                key={wallet.public_key}
+                onClick={() => loadSelectedWallet(wallet.public_key)}
+                className="card cyberpunk w-full text-left p-4 hover:border-[#39ff14]/80"
+              >
+                <span className="text-sm font-mono">{wallet.public_key}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="text-center text-[#39ff14] my-8">
+        {storedWallets.length > 0 ? 'OR ADD NEW WALLET' : 'ADD NEW WALLET'}
+      </div>
+
+      {/* Your existing import form */}
+      <form onSubmit={importWallet} className="mb-8">
+        <label className="block mb-2 text-[#39ff14]">Import Existing Wallet</label>
+        <input
+          type="password"
+          className="cyberpunk w-full mb-4"
+          placeholder="Enter private key (base58 format)"
+          value={privateKey}
+          onChange={(e) => setPrivateKey(e.target.value)}
+        />
+        <button
+          type="submit"
+          disabled={loading || !privateKey}
+          className="cyberpunk w-full"
+        >
+          {loading ? 'Importing...' : 'Import Wallet'}
+        </button>
+      </form>
+
+      <div className="text-center text-[#39ff14] my-8">OR</div>
+
       <button
         onClick={createWallet}
         disabled={loading}
-        className="w-full py-2 px-4 rounded bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:from-blue-600 hover:to-purple-600 disabled:opacity-50"
+        className="cyberpunk w-full"
       >
         {loading ? 'Creating Wallet...' : 'Create New Wallet'}
       </button>
+
       {error && (
-        <p className="mt-4 text-red-400 text-sm">
+        <p className="mt-4 text-red-400">
           {error}
         </p>
       )}
@@ -224,16 +386,53 @@ const WelcomePage = ({ setWallet }: { setWallet: (wallet: Keypair | null) => voi
 
 // Dashboard page showing wallet info and actions
 const DashboardPage = () => {
-  const { wallet } = useOutletContext<ContextType>();
-  
+  const { wallet, selectedNetwork } = useOutletContext<ContextType>();
+  const [balance, setBalance] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check for null wallet before useEffect
+  if (!wallet) {
+    return <Navigate to="/" replace />;
+  }
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!wallet) return; // Extra safety check
+      
+      try {
+        setLoading(true);
+        const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
+        const balance = await connection.getBalance(wallet.publicKey);
+        setBalance(balance / LAMPORTS_PER_SOL);
+      } catch (error) {
+        console.error('Failed to fetch balance:', error);
+        setBalance(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBalance();
+    const interval = setInterval(fetchBalance, 10000);
+    return () => clearInterval(interval);
+  }, [wallet, selectedNetwork]);
+
+  // Only render content if we have a wallet
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="p-4 rounded-lg bg-gray-800 border border-gray-700">
-          <h2 className="text-lg font-semibold mb-2">Wallet Details</h2>
-          <div className="text-sm text-gray-300 break-all">
+    <div className="h-full w-full overflow-auto p-4">
+      <div className="container cyberpunk max-w-full">
+        <h1 className="cyberpunk">Dashboard</h1>
+        <div className="card cyberpunk w-full max-w-4xl mx-auto">
+          <h2 className="cyberpunk">Wallet Details</h2>
+          <div className="text-sm break-all">
             <p>Public Key: {wallet.publicKey.toString()}</p>
+            <p className="mt-2">
+              Balance: {loading ? (
+                <span>Loading...</span>
+              ) : (
+                <span>{balance?.toFixed(4)} SOL</span>
+              )}
+            </p>
           </div>
         </div>
       </div>
@@ -242,7 +441,12 @@ const DashboardPage = () => {
 };
 
 // Create router configuration
-const createRouter = (wallet: Keypair | null, setWallet: (wallet: Keypair | null) => void) => 
+const createRouter = (
+  wallet: Keypair | null, 
+  setWallet: (wallet: Keypair | null) => void,
+  selectedNetwork: NetworkInfo,
+  setSelectedNetwork: (network: NetworkInfo) => void
+) => 
   createBrowserRouter([
     {
       path: '/',
@@ -251,13 +455,20 @@ const createRouter = (wallet: Keypair | null, setWallet: (wallet: Keypair | null
       ) : (
         <Navigate to="/dashboard" replace />
       ),
+      errorElement: <ErrorBoundary />
     },
     {
-      element: <AuthenticatedLayout wallet={wallet} setWallet={setWallet} />,
+      element: <AuthenticatedLayout 
+        wallet={wallet} 
+        setWallet={setWallet}
+        selectedNetwork={selectedNetwork}
+        setSelectedNetwork={setSelectedNetwork}
+      />,
       children: [
         {
           path: 'dashboard',
           element: <DashboardPage />,
+          errorElement: <ErrorBoundary />
         },
         // Placeholder pages - you can replace these with actual components
         {
@@ -280,8 +491,7 @@ const createRouter = (wallet: Keypair | null, setWallet: (wallet: Keypair | null
 const App = () => {
   const [wallet, setWallet] = useState<Keypair | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Add a ref to track if we've already tried loading
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkInfo>(NETWORKS[0]);
   const hasTriedLoading = useRef(false);
 
   useEffect(() => {
@@ -324,7 +534,7 @@ const App = () => {
     setWallet(newWallet);
   };
 
-  const router = createRouter(wallet, handleSetWallet);
+  const router = createRouter(wallet, handleSetWallet, selectedNetwork, setSelectedNetwork);
 
   if (loading) {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">

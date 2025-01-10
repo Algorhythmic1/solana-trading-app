@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --glitched-duration: 0.9s;
   --glitched-long-duration: 3s;
@@ -222,23 +226,14 @@ a.cyberpunk:hover::after {
   position: relative;
   margin: 0 auto;
   width: 100%;
-  max-width: 800px;
-  min-height: 100vh;
+  /* Remove min-height: 100vh; or replace with: */
+  min-height: fit-content;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
-  clip-path: polygon(
-    0 20px,
-    20px 0,
-    calc(100% - 20px) 0,
-    100% 20px,
-    100% calc(100% - 20px),
-    calc(100% - 20px) 100%,
-    20px 100%,
-    0 calc(100% - 20px)
-  );
+  /* ... rest of your styles ... */
 }
 
 .container.cyberpunk::before {
@@ -251,7 +246,7 @@ a.cyberpunk:hover::after {
   background: var(--neon-green);
   z-index: -1;
   filter: blur(10px);
-  opacity: 0.5;
+  opacity: 0.2;
 }
 
 /* Scrollbar */
@@ -305,12 +300,20 @@ a.cyberpunk:hover::after {
   animation: gridPulse 4s infinite alternate;
 }
 
+.grid-bg2 {
+  background-image: 
+    linear-gradient(var(--neon-green-opacity) 1px, transparent 1px),
+    linear-gradient(90deg, var(--neon-green-opacity) 1px, transparent 1px);
+  background-size: 15px 15px;
+  background-position: center center;
+}
+
 @keyframes gridPulse {
   from {
-    opacity: 0.2;
+    opacity: 0.5;
   }
   to {
-    opacity: 0.4;
+    opacity: 0.7;
   }
 }
 
