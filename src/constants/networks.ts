@@ -1,0 +1,19 @@
+// src/constants/networks.ts
+
+import { LayoutDashboard, SendHorizontal, History, Settings } from 'lucide-react';
+import { clusterApiUrl } from '@solana/web3.js';
+import { NetworkInfo } from '../types';
+
+export const NETWORKS: NetworkInfo[] = [
+  { name: 'localnet', endpoint: 'http://127.0.0.1:8899' },
+  { name: 'devnet', endpoint: clusterApiUrl('devnet') },
+  { name: 'testnet', endpoint: clusterApiUrl('testnet') },
+  { name: 'mainnet-beta', endpoint: 'https://mainnet.helius-rpc.com/?api-key=34ff2ba3-5858-43cc-a351-b2cf9b3420fb' }
+];
+
+export const navigationItems = [
+  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { name: 'Send', path: '/send', icon: SendHorizontal },
+  { name: 'History', path: '/history', icon: History },
+  { name: 'Settings', path: '/settings', icon: Settings },
+];

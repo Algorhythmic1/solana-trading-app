@@ -1,44 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --glitched-duration: 0.9s;
-  --glitched-long-duration: 3s;
-  --neon-green: #39ff14;
-  --neon-green-opacity: #39ff1442;
-  --bright-green: #00ff00;
-  --dark-green: #008000;
-  --border-color: #50fc50;
-  --accent-color: #ff003c;
-  --black-color: #000;
-  --dark-bg: #0a0a0a;
-}
-
-body {
-  background-color: var(--dark-bg);
-  padding: 0;
-  margin: 0;
-  font-size: 20px;
-  color: var(--neon-green);
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-#root {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: 100vh;
-}
-
-body * {
-  font-family: "Rajdhani", "Orbitron", sans-serif;
-}
-
 /* Form fields */
 input[type="text"].cyberpunk,
 input[type="date"].cyberpunk,
@@ -183,41 +142,12 @@ a.cyberpunk:hover::after {
   transform-origin: left;
 }
 
-/* Main layout */
-.logo-container {
-  margin: 0;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
-  background-color: var(--dark-bg);
-}
-
-/* Logo styles */
-.logo {
-  width: 300px;  /* Fixed width */
-  height: 300px; /* Fixed height */
-  padding: 0.5rem;
-  will-change: filter, transform;
-  transition: all 300ms ease-in-out;
-}
 
 .logo.two:hover {
   filter: drop-shadow(0 0 1em var(--bright-green));
   transform: scale(1.1);
 }
 
-/* Row layout */
-.row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  width: auto;
-  margin: 0 auto;
-}
 
 .container.cyberpunk {
   background-color: var(--dark-bg);
@@ -288,24 +218,6 @@ a.cyberpunk:hover::after {
   100% {
     transform: skew(0);
   }
-}
-
-/* Grid background */
-.grid-bg {
-  background-image: 
-    linear-gradient(var(--neon-green-opacity) 1px, transparent 1px),
-    linear-gradient(90deg, var(--neon-green-opacity) 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-position: center center;
-  animation: gridPulse 4s infinite alternate;
-}
-
-.grid-bg2 {
-  background-image: 
-    linear-gradient(var(--neon-green-opacity) 1px, transparent 1px),
-    linear-gradient(90deg, var(--neon-green-opacity) 1px, transparent 1px);
-  background-size: 15px 15px;
-  background-position: center center;
 }
 
 @keyframes gridPulse {

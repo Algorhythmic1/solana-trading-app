@@ -1,0 +1,48 @@
+/* Main layout */
+.logo-container {
+  margin: 0;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--dark-bg);
+}
+
+/* Logo styles */
+.logo {
+  width: 300px;  /* Fixed width */
+  height: 300px; /* Fixed height */
+  padding: 0.5rem;
+  will-change: filter, transform;
+  transition: all 300ms ease-in-out;
+}
+
+/* Row layout */
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  width: auto;
+  margin: 0 auto;
+}
+
+/* Grid background */
+.grid-bg {
+  background-image: 
+    linear-gradient(var(--neon-green-opacity) 1px, transparent 1px),
+    linear-gradient(90deg, var(--neon-green-opacity) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center center;
+  animation: gridPulse 4s infinite alternate;
+}
+
+.grid-bg2 {
+  background-image: 
+    linear-gradient(var(--neon-green-opacity) 1px, transparent 1px),
+    linear-gradient(90deg, var(--neon-green-opacity) 1px, transparent 1px);
+  background-size: 15px 15px;
+  background-position: center center;
+}
