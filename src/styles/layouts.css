@@ -6,7 +6,7 @@
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--dark-bg);
+  background-color: var(--sol-background);
 }
 
 /* Logo styles */
@@ -30,10 +30,9 @@
 }
 
 .grid-bg {
-  position: relative;  /* Add this */
+  position: relative;  
 }
 
-/* Create a new layer for the grid */
 .grid-bg::before {
   content: '';
   position: absolute;
@@ -43,8 +42,8 @@
   bottom: 0;
   z-index: 0;  /* Above background, below content */
   background-image: 
-    linear-gradient(rgba(57, 255, 20, 0.2) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(57, 255, 20, 0.2) 1px, transparent 1px);
+    linear-gradient(var(--sol-green-opacity) 1px, transparent 1px),
+    linear-gradient(90deg, var(--sol-green-opacity) 1px, transparent 1px);
   background-size: 20px 20px;
   background-position: center center;
   animation: gridPulse 3s infinite alternate;

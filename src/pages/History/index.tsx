@@ -121,31 +121,31 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
   };
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-[#39ff14] text-2xl mb-8">Transaction History</h1>
+    <div className="container cyberpunk min-h-screen p-8 bg-sol-background">
+      <h1 className="cyberpunk text-sol-green text-2xl mb-8">Transaction History</h1>
 
       {error ? (
-        <div className="text-red-400 mb-4">{error}</div>
+        <div className="text-sol-error mb-4">{error}</div>
       ) : (
         <div className="space-y-4">
           {transactions.map((tx) => (
             <div
               key={tx.signature}
-              className="card cyberpunk p-4 hover:border-[#39ff14]/80"
+              className="card cyberpunk p-4 hover:border-sol-green/80"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex flex-col">
                   <span className={`text-lg ${
-                    tx.type === 'received' ? 'text-green-400' : 'text-red-400'
+                    tx.type === 'received' ? 'text-sol-green' : 'text-sol-error'
                   }`}>
                     {tx.type === 'received' ? '+' : '-'}{tx.amount} SOL
                   </span>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-sol-text">
                     {new Date(tx.timestamp).toLocaleString()}
                   </span>
                 </div>
                 <span className={`text-sm ${
-                  tx.status === 'confirmed' ? 'text-[#39ff14]' : 'text-red-400'
+                  tx.status === 'confirmed' ? 'text-sol-green' : 'text-sol-error'
                 }`}>
                   {tx.status}
                 </span>
@@ -153,10 +153,10 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
               
               <div className="text-sm">
                 <div className="flex flex-col">
-                  <span className="text-gray-400">
+                  <span className="text-sol-text">
                     {tx.type === 'sent' ? 'To' : 'From'}:
                   </span>
-                  <span className="font-mono text-[#39ff14] truncate">
+                  <span className="font-mono text-sol-green truncate">
                     {tx.otherParty}
                   </span>
                 </div>
@@ -164,14 +164,18 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
               
               <div className="mt-2">
                 <ExplorerLink type="tx" value={tx.signature}>
-                View on Explorer →
+                  <span className="text-sol-green hover:text-sol-green/80">
+                    View on Explorer →
+                  </span>
                 </ExplorerLink>
               </div>
             </div>
           ))}
 
           {loading && (
-            <div className="text-center py-4">Loading transactions...</div>
+            <div className="text-center text-sol-text py-4">
+              Loading transactions...
+            </div>
           )}
 
           {hasMore && !loading && (
@@ -184,13 +188,13 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
           )}
 
           {!hasMore && transactions.length > 0 && (
-            <div className="text-center text-gray-400 py-4">
+            <div className="text-center text-sol-text py-4">
               No more transactions to load
             </div>
           )}
 
           {!loading && transactions.length === 0 && (
-            <div className="text-center text-gray-400 py-4">
+            <div className="text-center text-sol-text py-4">
               No transactions found
             </div>
           )}

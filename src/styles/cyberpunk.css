@@ -9,18 +9,18 @@ input[type="password"].cyberpunk,
 textarea.cyberpunk,
 select.cyberpunk {
   width: calc(100% - 30px);
-  border: 30px solid var(--black-color);
-  border-left: 5px solid var(--black-color);
-  border-right: 5px solid var(--black-color);
-  border-bottom: 15px solid var(--black-color);
+  border: 30px solid var(--sol-border);
+  border-left: 5px solid var(--sol-border);
+  border-right: 5px solid var(--sol-border);
+  border-bottom: 15px solid var(--sol-border);
   clip-path: polygon(0px 25px, 26px 0px, calc(60% - 25px) 0px, 60% 25px, 100% 25px, 100% calc(100% - 10px), calc(100% - 15px) calc(100% - 10px), calc(80% - 10px) calc(100% - 10px), calc(80% - 15px) calc(100% - 0px), 10px calc(100% - 0px), 0% calc(100% - 10px));
   margin-bottom: 10px;
   padding: 12px;
   font-size: 1.7rem;
   font-weight: 700;
-  background-color: var(--dark-bg);
-  color: var(--neon-green);
-  box-shadow: 0 0 5px var(--neon-green);  /* Reduced glow, no animation */
+  background-color: var(--sol-border);
+  color: var(--sol-green);
+  box-shadow: 2px 2px 5px var(--sol-green);  /* Reduced glow, no animation */
   transition: all 0.3s ease;
 }
 
@@ -30,6 +30,8 @@ input[type="password"].cyberpunk {
   font-weight: 400;
   font-variant: normal;
   text-transform: none;
+  border: 2px solid var(--sol-border);
+  background-color: var(--sol-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: 2px;
@@ -43,7 +45,7 @@ textarea.cyberpunk {
 /* Buttons */
 button.cyberpunk {
   --text: "CTRL";
-  --background-color: var(--black-color);
+  --background-color: var(--sol-background);
   border: none;
   border-radius: 0%;
   font-size: 1.5rem;
@@ -54,8 +56,8 @@ button.cyberpunk {
   padding: 35px 75px;
   margin: 10px 20px 10px 0px;
   position: relative;
-  color: var(--neon-green);
-  border-right: 3px solid var(--border-color);
+  color: var(--button-text-color, var(--sol-green));
+  border-right: 3px solid var(--sol-border);
   clip-path: polygon(
     -15px 0%,
     calc(100% + 15px) 0%,
@@ -64,26 +66,32 @@ button.cyberpunk {
     -15px calc(100% - 35px)
   );
   cursor: pointer;
-  background-color: var(--background-color);
+  background-color: var(--sol-background);
   outline: none;
-  box-shadow: 0 0 15px var(--neon-green);
+  box-shadow: 0 0 15px var(--sol-bright-green);
   transition: all 0.3s ease;
 }
 
+button.cyberpunk.modal-btn {
+  padding: 8px 16px;  
+  font-size: 0.875rem; 
+  min-height: 32px;  
+}
+
 button.cyberpunk:hover {
-  box-shadow: 0 0 30px var(--neon-green);
-  text-shadow: 0 0 10px var(--neon-green);
+  box-shadow: 0 0 30px var(--sol-error);
+  text-shadow: 0 0 10px var(--sol-error);
   animation: buttonGlow 1.5s infinite alternate;
 }
 
 @keyframes buttonGlow {
   from {
-    box-shadow: 0 0 15px var(--neon-green);
-    text-shadow: 0 0 5px var(--neon-green);
+    box-shadow: 0 0 15px var(--sol-green);
+    text-shadow: 0 0 5px var(--sol-green);
   }
   to {
-    box-shadow: 0 0 30px var(--neon-green), 0 0 50px var(--neon-green);
-    text-shadow: 0 0 15px var(--neon-green), 0 0 25px var(--neon-green);
+    box-shadow: 0 0 30px var(--sol-green), 0 0 50px var(--sol-green);
+    text-shadow: 0 0 15px var(--sol-green), 0 0 25px var(--sol-green);
   }
 }
 
@@ -91,13 +99,13 @@ button.cyberpunk:hover {
 h1.cyberpunk,
 h2.cyberpunk,
 h3.cyberpunk {
-  color: var(--neon-green);
+  color: var(--sol-green);
   text-transform: uppercase;
   letter-spacing: 2px;
   position: relative;
   padding-left: 20px;
   margin-bottom: 30px;
-  text-shadow: 0 0 10px var(--neon-green);
+  text-shadow: 0 0 10px var(--sol-green);
 }
 
 h1.cyberpunk::before,
@@ -109,14 +117,14 @@ h3.cyberpunk::before {
   top: 50%;
   width: 10px;
   height: 10px;
-  background: var(--neon-green);
+  background: var(--sol-green);
   transform: translateY(-50%) rotate(45deg);
-  box-shadow: 0 0 10px var(--neon-green);
+  box-shadow: 0 0 10px var(--sol-green);
 }
 
 /* Links */
 a.cyberpunk {
-  color: var(--neon-green);
+  color: var(--sol-green);
   text-decoration: none;
   position: relative;
   padding: 0 5px;
@@ -130,11 +138,11 @@ a.cyberpunk::after {
   left: 0;
   width: 100%;
   height: 2px;
-  background: var(--neon-green);
+  background: var(--sol-green);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform 0.3s ease;
-  box-shadow: 0 0 10px var(--neon-green);
+  box-shadow: 0 0 10px var(--sol-green);
 }
 
 a.cyberpunk:hover::after {
@@ -144,16 +152,16 @@ a.cyberpunk:hover::after {
 
 
 .logo.two:hover {
-  filter: drop-shadow(0 0 1em var(--bright-green));
+  filter: drop-shadow(0 0 1em var(--sol-bright-green));
   transform: scale(1.1);
 }
 
 .container.cyberpunk {
   position: relative;
   z-index: 1;
-  background-color: transparent; /* Changed from var(--dark-bg) */
   padding: 20px;
-  border: 2px solid var(--neon-green);
+  border: 2px solid var(--sol-green);
+  box-shadow: 0 0 20px var(--sol-green-opacity);
   margin: 0 auto;
   width: 100%;
   min-height: fit-content;
@@ -164,6 +172,10 @@ a.cyberpunk:hover::after {
   box-sizing: border-box;
 }
 
+.container.cyberpunk.with-bg {
+  background-color: var(--sol-background);
+}
+
 .container.cyberpunk::before {
   content: '';
   position: absolute;
@@ -171,10 +183,10 @@ a.cyberpunk:hover::after {
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: var(--neon-green);
+  background: var(--sol-background);
   z-index: -1;
-  filter: blur(10px);
-  opacity: 0.15;
+  filter: blur(3px);
+  opacity: 0.05;
 }
 
 /* Ensure content stays above grid */
@@ -186,13 +198,13 @@ a.cyberpunk:hover::after {
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
-  background-color: var(--dark-bg);
+  background-color: var(--sol-background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--neon-green);
+  background-color: var(--sol-green);
   border-radius: 0;
-  box-shadow: 0 0 10px var(--neon-green);
+  box-shadow: 0 0 10px var(--sol-green);
 }
 
 /* Glitch effects */
@@ -235,12 +247,34 @@ a.cyberpunk:hover::after {
 
 /* Card styles */
 .card.cyberpunk {
-  background-color: var(--dark-bg);
-  border: 2px solid var(--neon-green);
+  border: 2px solid var(--sol-green);
   padding: 20px;
   margin: 20px 0;
   position: relative;
-  box-shadow: 0 0 20px var(--neon-green-opacity);
+  box-shadow: 0 0 20px var(--sol-green-opacity);
+  clip-path: polygon(
+    0 20px,
+    20px 0,
+    calc(100% - 20px) 0,
+    100% 20px,
+    100% calc(100% - 20px),
+    calc(100% - 20px) 100%,
+    20px 100%,
+    0 calc(100% - 20px)
+  );
+}
+
+.card.cyberpunk.with-bg {
+  background-color: var(--sol-background);
+}
+
+.card.cyberpunk-2 {
+  background-color: var(--sol-background);
+  border: 2px solid var(--sol-red);
+  padding: 20px;
+  margin: 20px 0;
+  position: relative;
+  box-shadow: 0 0 20px var(--sol-red-opacity);
   clip-path: polygon(
     0 20px,
     20px 0,
@@ -260,7 +294,20 @@ a.cyberpunk:hover::after {
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: var(--neon-green);
+  background: var(--sol-green);
+  z-index: -1;
+  filter: blur(10px);
+  opacity: 0.3;
+}
+
+.card.cyberpunk-2::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--sol-green);
   z-index: -1;
   filter: blur(10px);
   opacity: 0.3;
@@ -277,13 +324,13 @@ table.cyberpunk {
 table.cyberpunk th,
 table.cyberpunk td {
   padding: 15px;
-  border: 1px solid var(--neon-green);
-  color: var(--neon-green);
-  background-color: var(--dark-bg);
+  border: 1px solid var(--sol-green);
+  color: var(--sol-green);
+  background-color: var(--sol-background);
 }
 
 table.cyberpunk th {
-  background-color: var(--black-color);
+  background-color: var(--sol-background);
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: bold;
@@ -291,5 +338,5 @@ table.cyberpunk th {
 
 table.cyberpunk tr:hover td {
   background-color: rgba(57, 255, 20, 0.1);
-  box-shadow: 0 0 15px var(--neon-green-opacity);
+  box-shadow: 0 0 15px var(--sol-green-opacity);
 }

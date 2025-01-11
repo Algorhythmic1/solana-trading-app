@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Keypair, Connection } from '@solana/web3.js';
-import { EXPLORERS, type ExplorerInfo } from '../../constants/explorers';
+import { EXPLORERS } from '../../constants/explorers';
 import bs58 from 'bs58'; 
 import type { NetworkInfo } from '../../types';
+import { useTheme, type ThemeName } from '../../hooks/useTheme';
+
+const THEME_OPTIONS = [
+  { name: 'Cyberpunk', id: 'cyberpunk' },
+  { name: 'Solana', id: 'solana' },
+  { name: 'Matrix', id: 'matrix' },
+] as const;
 
 interface SettingsPageProps {
   wallet: Keypair | null;
@@ -11,40 +18,36 @@ interface SettingsPageProps {
   setSelectedNetwork: (network: NetworkInfo) => void;
 }
 
-interface ThemeOption {
-  name: string;
-  id: string;
-}
 
-const THEME_OPTIONS: ThemeOption[] = [
-  { name: 'Default Dark', id: 'default-dark' },
-  { name: 'Light Mode', id: 'light' },
-  { name: 'Cyberpunk', id: 'cyberpunk' },
-  // Add more themes as needed
-];
-
-export const SettingsPage: React.FC<SettingsPageProps> = ({ 
+export const SettingsPage = ({ 
   wallet, 
   selectedNetwork,
   setSelectedNetwork 
-}) => {
-  const [selectedExplorer, setSelectedExplorer] = useState<ExplorerInfo>(EXPLORERS[0]);
+}: SettingsPageProps) => {
+  const { theme, setTheme } = useTheme();
   const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [customRpcUrl, setCustomRpcUrl] = useState(selectedNetwork.endpoint);
-  const [selectedTheme, setSelectedTheme] = useState<string>('default-dark');
-  const [isEditingRpc, setIsEditingRpc] = useState(false);
 
-  useEffect(() => {
+  // Initialize from localStorage with proper typing
+  const [selectedExplorer, setSelectedExplorer] = useState(() => {
     const savedExplorer = localStorage.getItem('preferredExplorer');
     if (savedExplorer) {
       const explorer = EXPLORERS.find(e => e.name === savedExplorer);
-      if (explorer) {
-        setSelectedExplorer(explorer);
-      }
+      return explorer || EXPLORERS[0];
     }
-  }, []);
+    return EXPLORERS[0];
+  });
+
+  // Add this temporarily to Settings page to debug
+  useEffect(() => {
+    console.log('Current theme:', document.documentElement.getAttribute('data-theme'));
+  }, [theme]);
+  
+  // RPC settings
+  const [customRpcUrl, setCustomRpcUrl] = useState(selectedNetwork.endpoint);
+  const [isEditingRpc, setIsEditingRpc] = useState(false);
 
   const handleExplorerChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log('Explorer changed:', event.target.value); 
     const explorer = EXPLORERS.find(e => e.name === event.target.value);
     if (explorer) {
       setSelectedExplorer(explorer);
@@ -53,10 +56,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   const handleThemeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newTheme = event.target.value;
-    setSelectedTheme(newTheme);
-    localStorage.setItem('preferredTheme', newTheme);
-    // Theme application logic would go here
+    console.log('Theme changed:', event.target.value);
+    const newTheme = event.target.value as ThemeName;
+    setTheme(newTheme);
   };
 
   const handleRpcSubmit = () => {
@@ -68,26 +70,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     }
     setIsEditingRpc(false);
   };
-
+  
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+    <div className="container bg-sol-background cyberpunk min-h-screen p-8">
+      <h1 className="cyberpunk text-sol-green text-2xl mb-6">Settings</h1>
       
-      <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-6">
         {/* Explorer Settings */}
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Blockchain Explorer</h2>
+        <div className="card cyberpunk">
+          <h2 className="cyberpunk text-xl mb-4">Blockchain Explorer</h2>
           <div className="flex flex-col space-y-2">
-            <label htmlFor="explorer" className="text-sm text-gray-300">
-              Default Explorer
-            </label>
             <select
               id="explorer"
               value={selectedExplorer.name}
               onChange={handleExplorerChange}
-              className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2"
+              className="bg-sol-background cyberpunk w-full"
             >
-              {EXPLORERS.map((explorer: ExplorerInfo) => (
+              {EXPLORERS.map((explorer) => (
                 <option key={explorer.name} value={explorer.name}>
                   {explorer.name}
                 </option>
@@ -96,9 +95,28 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
         </div>
 
+        {/* Theme Settings */}
+        <div className="card cyberpunk">
+          <h2 className="cyberpunk text-xl mb-4">Theme Settings</h2>
+          <div className="flex flex-col space-y-2">
+            <select
+              id="theme"
+              value={theme}
+              onChange={handleThemeChange}
+              className="bg-sol-background cyberpunk w-full"
+            >
+              {THEME_OPTIONS.map(option => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* RPC URL Settings */}
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">RPC Settings</h2>
+        <div className="card cyberpunk">
+          <h2 className="cyberpunk text-xl mb-4">RPC Settings</h2>
           <div className="flex flex-col space-y-2">
             {isEditingRpc ? (
               <>
@@ -106,13 +124,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   type="text"
                   value={customRpcUrl}
                   onChange={(e) => setCustomRpcUrl(e.target.value)}
-                  className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2"
+                  className="cyberpunk w-full"
                   placeholder="Enter RPC URL"
                 />
                 <div className="flex space-x-2">
                   <button
                     onClick={handleRpcSubmit}
-                    className="bg-blue-500 px-4 py-2 rounded-md"
+                    className="cyberpunk modal-btn"
                   >
                     Save
                   </button>
@@ -121,18 +139,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       setIsEditingRpc(false);
                       setCustomRpcUrl(selectedNetwork.endpoint);
                     }}
-                    className="bg-gray-600 px-4 py-2 rounded-md"
+                    className="cyberpunk modal-btn"
                   >
                     Cancel
                   </button>
                 </div>
               </>
             ) : (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-300">{selectedNetwork.endpoint}</span>
+              <div className="flex flex-col space-y-2">
+                <span className="text-sol-green break-all">{selectedNetwork.endpoint}</span>
                 <button
                   onClick={() => setIsEditingRpc(true)}
-                  className="bg-gray-700 px-4 py-2 rounded-md"
+                  className="cyberpunk modal-btn"
                 >
                   Edit
                 </button>
@@ -140,35 +158,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             )}
           </div>
         </div>
-
-        {/* Theme Settings */}
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Theme Settings</h2>
-          <div className="flex flex-col space-y-2">
-            <label htmlFor="theme" className="text-sm text-gray-300">
-              Application Theme
-            </label>
-            <select
-              id="theme"
-              value={selectedTheme}
-              onChange={handleThemeChange}
-              className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2"
-            >
-              {THEME_OPTIONS.map(theme => (
-                <option key={theme.id} value={theme.id}>
-                  {theme.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
+        
         {/* Private Key Export */}
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Wallet Security</h2>
+        <div className="card cyberpunk">
+          <h2 className="cyberpunk text-xl mb-4">Wallet Security</h2>
           <button
             onClick={() => setShowPrivateKey(true)}
-            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md"
+            className="cyberpunk modal-btn hover:text-sol-error/80"
+            style={{ '--button-text-color': 'var(--sol-error)' } as React.CSSProperties}
           >
             Show Private Key
           </button>
@@ -177,16 +174,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
       {/* Private Key Modal */}
       {showPrivateKey && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-lg w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">Private Key</h3>
-            <div className="bg-gray-900 p-4 rounded-md break-all mb-4">
+        <div className="fixed inset-0 bg-sol-background/50 flex items-center justify-center">
+          <div className="card cyberpunk max-w-lg w-full mx-4">
+            <h3 className="cyberpunk text-xl mb-4">Private Key</h3>
+            <div className="cyberpunk bg-sol-card p-4 rounded-md break-all mb-4">
               {wallet ? bs58.encode(wallet.secretKey) : 'No wallet connected'}
             </div>
             <div className="flex justify-end">
               <button
                 onClick={() => setShowPrivateKey(false)}
-                className="bg-gray-600 px-4 py-2 rounded-md"
+                className="cyberpunk modal-btn"
               >
                 Close
               </button>

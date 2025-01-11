@@ -33,26 +33,26 @@ export const AuthenticatedLayout = ({
     }
   
     return (
-      <div className="min-h-screen grid-bg">
-        <nav className="bg-[#0a0a0a] border-b-2 border-[#39ff14] px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* ... other nav items ... */}
-            <div className="flex items-center gap-4">
-              <NetworkSelector
-                selectedNetwork={selectedNetwork}
-                onNetworkChange={setSelectedNetwork}
-              />
-              <button
-                onClick={handleDisconnect}  // Use the new handler
-                className="cyberpunk"
-              >
-                Disconnect
-              </button>
+      <div className="min-h-screen grid-bg bg-sol-background">
+          <nav className="bg-sol-background border-b-2 border-sol-green px-4 py-3">
+            <div className="flex items-center justify-between">
+              {/* ... other nav items ... */}
+              <div className="flex items-center gap-4">
+                <NetworkSelector
+                  selectedNetwork={selectedNetwork}
+                  onNetworkChange={setSelectedNetwork}
+                />
+                <button
+                  onClick={handleDisconnect}  // Use the new handler
+                  className="cyberpunk"
+                >
+                  Disconnect
+                </button>
+              </div>
             </div>
-          </div>
-        </nav>
-        
-        <div className="flex h-screen lg:h-auto">
+          </nav>
+
+        <div className="flex flex-1">
           <Sidebar 
             isMobileMenuOpen={isMobileMenuOpen} 
             setIsMobileMenuOpen={setIsMobileMenuOpen}

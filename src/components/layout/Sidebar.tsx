@@ -22,8 +22,8 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
         to={item.path}
         className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
           isActive 
-            ? 'bg-[#39ff14]/20 text-[#39ff14]' 
-            : 'text-gray-400 hover:bg-gray-800 hover:text-[#39ff14]'
+            ? 'bg-sol-green/20 text-sol-green' 
+            : 'text-sol-text hover:bg-sol-card hover:text-sol-green'
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
       >
@@ -38,7 +38,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       {/* Mobile backdrop */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 lg:hidden z-20"
+          className="fixed inset-0 bg-sol-background/90 lg:hidden z-20"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -46,18 +46,18 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       {/* Sidebar */}
       <aside className={`
         fixed top-0 bottom-0 left-0 z-30
-        w-64 bg-[#0a0a0a] border-r-2 border-[#39ff14]
+        w-64 bg-sol-background border-r-2 border-b-2 border-sol-green
         transform transition-transform duration-200 ease-in-out
         lg:translate-x-0 lg:static
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-4 border-b-2 border-[#39ff14]">
+        <div className="p-4 border-b-2 border-sol-green">
           <div className="flex items-center gap-2">
-            <WalletIcon className="text-[#39ff14]" />
-            <span className="font-bold text-lg text-[#39ff14]">SOLedge Trading</span>
+            <WalletIcon className="text-sol-green" />
+            <span className="font-bold text-lg text-sol-green">SOLedge Trading</span>
           </div>
         </div>
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 space-y-2 sol-accent">
           {navigationItems.map((item) => (
             <NavItem key={item.path} item={item} />
           ))}

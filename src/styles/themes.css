@@ -1,0 +1,48 @@
+:root {
+  /* Colors */
+  --sol-green: #26fe00e6;
+  --sol-bright-green: #51ff00;
+  --sol-green-opacity: #39ff1442;
+  --sol-background: rgb(0,0,0,0.75);
+  --sol-card: #1a1a1a;
+  --sol-text: #ffffff;
+  --sol-border: #000000b9;
+  --sol-accent: #ff003c;
+  --sol-error: #ff0033;
+
+  /* Animation durations */
+  --glitched-duration: 0.9s;
+  --glitched-long-duration: 3s;
+}
+
+/* Cyberpunk theme (default) */
+[data-theme='cyberpunk'] {
+  /* Same as root for now */
+  --sol-border: #127500ef;
+}
+
+/* Light theme */
+[data-theme='solana'] {
+  --sol-green: #33cccc;
+  --sol-bright-green: #00f7ff;
+  --sol-green-opacity: #e21dd9;
+  --sol-background: rgb(0,0,0,0.75);
+  --sol-card: #47476b;
+  --sol-text: #e6e6e6;
+  --sol-border: #005e73;
+  --sol-accent: #ff00ff;
+  --sol-error: #ff0066;
+}
+
+/* Matrix theme */
+[data-theme='matrix'] {
+  --sol-green: #00ff00;
+  --sol-bright-green: #51ff00;
+  --sol-green-opacity: #00ff0042;
+  --sol-background: rgb(0,0,0,0.5);
+  --sol-card: #001100;
+  --sol-text: #00ff00;
+  --sol-border: #003300;
+  --sol-accent: #66ff66;
+  --sol-error: #ff0000;
+}

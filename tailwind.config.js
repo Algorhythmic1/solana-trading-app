@@ -1,17 +1,33 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
-      colors: {
-        'neon-green': 'var(--neon-green)',
-        'neon-green-opacity': 'var(--neon-green-opacity)',
-        'dark-bg': 'var(--dark-bg)',
+      fontFamily: {
+        mono: [
+          'ui-monospace',
+          'SFMono-Regular',
+          'Menlo',
+          'Monaco',
+          'Consolas',
+          'Liberation Mono',
+          'Courier New',
+          'monospace'
+        ],
       },
-    },
+      colors: {
+        'sol-green': 'var(--sol-green)',
+        'sol-green-opacity': 'var(--sol-green-opacity)',
+        'sol-background': 'var(--sol-background)',
+        'sol-card': 'var(--sol-card)',
+        'sol-text': 'var(--sol-text)',
+        'sol-border': 'var(--sol-border)',
+        'sol-accent': 'var(--sol-accent)',
+        'sol-error': 'var(--sol-error)',
+      }
+    }
   },
   plugins: [],
 }

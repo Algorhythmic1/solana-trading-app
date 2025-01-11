@@ -89,68 +89,70 @@ export const TransactionConfirmation = ({
   const hasInsufficientFunds = afterBalance !== null && afterBalance < 0;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-[#0a0a0a] border-2 border-[#39ff14] p-6 rounded-lg max-w-md w-full">
-        <h2 className="text-[#39ff14] text-xl mb-4">Confirm Transaction</h2>
+    <div className="fixed inset-0 bg-sol-background/50 flex items-center justify-center p-4">
+      <div className="card cyberpunk max-w-md w-full">
+        <h2 className="cyberpunk text-xl mb-4">Confirm Transaction</h2>
         
         {loading ? (
-          <div className="text-center py-4">Loading transaction details...</div>
+          <div className="text-center text-sol-text py-4">
+            Loading transaction details...
+          </div>
         ) : error ? (
-          <div className="text-red-400 py-4">{error}</div>
+          <div className="text-sol-error py-4">{error}</div>
         ) : (
           <div className="space-y-4">
-            <div className="border border-[#39ff14]/20 rounded p-4 space-y-2">
+            <div className="border border-sol-green/20 rounded p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-400">From</span>
-                <span className="text-sm font-mono text-[#39ff14] truncate max-w-[200px]">
+                <span className="text-sol-text">From</span>
+                <span className="text-sm font-mono text-sol-green truncate max-w-[200px]">
                   {fromAddress.toString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">To</span>
-                <span className="text-sm font-mono text-[#39ff14] truncate max-w-[200px]">
+                <span className="text-sol-text">To</span>
+                <span className="text-sm font-mono text-sol-green truncate max-w-[200px]">
                   {toAddress.toString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Amount</span>
-                <span className="text-[#39ff14]">{amount} SOL</span>
+                <span className="text-sol-text">Amount</span>
+                <span className="text-sol-green">{amount} SOL</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Network Fee</span>
-                <span className="text-[#39ff14]">≈ {estimatedFee?.toFixed(6)} SOL</span>
+                <span className="text-sol-text">Network Fee</span>
+                <span className="text-sol-green">≈ {estimatedFee?.toFixed(6)} SOL</span>
               </div>
             </div>
 
-            <div className="border border-[#39ff14]/20 rounded p-4 space-y-2">
+            <div className="border border-sol-green/20 rounded p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-400">Current Balance</span>
-                <span className="text-[#39ff14]">{currentBalance?.toFixed(6)} SOL</span>
+                <span className="text-sol-text">Current Balance</span>
+                <span className="text-sol-green">{currentBalance?.toFixed(6)} SOL</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Balance After</span>
-                <span className={`${hasInsufficientFunds ? 'text-red-400' : 'text-[#39ff14]'}`}>
+                <span className="text-sol-text">Balance After</span>
+                <span className={`${hasInsufficientFunds ? 'text-sol-error' : 'text-sol-green'}`}>
                   {afterBalance?.toFixed(6)} SOL
                 </span>
               </div>
             </div>
 
             {hasInsufficientFunds && (
-              <div className="text-red-400 text-sm">
+              <div className="text-sol-error text-sm">
                 Insufficient funds for this transaction
               </div>
             )}
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-2 mt-6">
               <button
                 onClick={onClose}
-                className="cyberpunk flex-1"
+                className="cyberpunk modal-btn flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={onConfirm}
-                className="cyberpunk flex-1"
+                className="cyberpunk modal-btn flex-1"
                 disabled={loading || hasInsufficientFunds}
               >
                 Confirm

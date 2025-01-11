@@ -1,12 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import './themes.css';
+@import './cyberpunk.css';
 
 :root {
   --glitched-duration: 0.9s;
   --glitched-long-duration: 3s;
   --neon-green: #39ff14;
   --neon-green-opacity: #39ff1442;
+  --neon-red: #ff0033;
+  --neon-red-opacity: #ff003342;
+  --neon-yellow: #ffd700;
+  --neon-yellow-opacity: #ffd70042;
   --bright-green: #00ff00;
   --dark-green: #008000;
   --border-color: #50fc50;
@@ -17,11 +23,11 @@
 
 /* Base styles */
 body {
-  background-color: var(--dark-bg);
+  background-color: var(--black-color);
   padding: 0;
   margin: 0;
   font-size: 20px;
-  color: var(--neon-green);
+  color: var(--sol-green);
   min-height: 100vh;
   width: 100%;
   display: flex;

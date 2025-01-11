@@ -38,8 +38,8 @@ export const DashboardPage = () => {
   }, [wallet, selectedNetwork]);
 
   return (
-    <div className="h-full w-full overflow-auto p-4">
-      <div className="container cyberpunk max-w-full">
+    <div className="h-full w-full overflow-auto p-4 ">
+      <div className="container cyberpunk max-w-full bg-sol-background">
         <h1 className="cyberpunk">Dashboard</h1>
         <div className="card cyberpunk w-full max-w-4xl mx-auto">
           <h2 className="cyberpunk">Wallet Details</h2>

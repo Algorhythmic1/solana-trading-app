@@ -123,12 +123,12 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
   };
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-[#39ff14] text-2xl mb-8">Send SOL</h1>
+    <div className="container cyberpunk min-h-screen p-8 bg-sol-background">
+      <h1 className="cyberpunk text-sol-green text-2xl mb-8">Send SOL</h1>
       
       <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
         <div>
-          <label className="block text-[#39ff14] mb-2">
+          <label className="block text-sol-green mb-2">
             Recipient Address
           </label>
           <input
@@ -142,7 +142,7 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
         </div>
 
         <div>
-          <label className="block text-[#39ff14] mb-2">
+          <label className="block text-sol-green mb-2">
             Amount (SOL)
           </label>
           <input
@@ -158,7 +158,7 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
         </div>
 
         {error && (
-          <div className="text-red-400 text-sm">
+          <div className="text-sol-error text-sm">
             {error}
           </div>
         )}
@@ -171,6 +171,7 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
           {loading ? 'Sending...' : 'Send SOL'}
         </button>
       </form>
+
       {showConfirmation && pendingTx && (
         <TransactionConfirmation
           isOpen={showConfirmation}

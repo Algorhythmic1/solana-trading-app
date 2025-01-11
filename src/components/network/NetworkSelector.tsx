@@ -31,36 +31,38 @@ export const NetworkSelector = ({ selectedNetwork, onNetworkChange }: NetworkSel
   }, [selectedNetwork]);
 
   return (
-<div className="flex items-center gap-4 p-4 bg-[#0a0a0a] border-2 border-[#39ff14] rounded">
-  <select
-    value={selectedNetwork.name}
-    onChange={(e) => {
-      const network = NETWORKS.find(n => n.name === e.target.value as Network);
-      if (network) onNetworkChange(network);
-    }}
-    className="cyberpunk px-2 py-1 bg-transparent text-[#39ff14] border-none focus:outline-none"
-  >
-    {NETWORKS.map(network => (
-      <option key={network.name} value={network.name} className="bg-[#0a0a0a]">
-        {network.name.charAt(0).toUpperCase() + network.name.slice(1)}
-      </option>
-    ))}
-  </select>
-  
-  <div className="flex items-center gap-2">
-    <div 
-      className={`w-2.5 h-2.5 rounded-full ${
-        connectionStatus === 'checking' ? 'animate-pulse bg-[#39ff14]/50' :
-        connectionStatus === 'connected' ? 'bg-[#39ff14] shadow-[0_0_10px_#39ff14]' :
-        'bg-red-500 shadow-[0_0_10px_#ff0000]'
-      }`} 
-    />
-    <span className="text-[#39ff14]">
-      {connectionStatus === 'checking' ? 'Connecting...' :
-       connectionStatus === 'connected' ? 'Connected' :
-       'Disconnected'}
-    </span>
-  </div>
-</div>
+    <div className="flex items-center gap-4 p-4 bg-sol-background border-2 border-sol-border rounded">
+      <select
+        value={selectedNetwork.name}
+        onChange={(e) => {
+          const network = NETWORKS.find(n => n.name === e.target.value as Network);
+          if (network) onNetworkChange(network);
+        }}
+        className="cyberpunk px-2 py-1 bg-sol-background text-sol-bright-green border-none focus:outline-none"
+      >
+        {NETWORKS.map(network => (
+          <option key={network.name} value={network.name} className="bg-[#0a0a0a]">
+            {network.name.charAt(0).toUpperCase() + network.name.slice(1)}
+          </option>
+        ))}
+      </select>
+      
+      <div className="flex bg-sol-background items-center gap-2">
+        <div 
+          className={`w-2.5 h-2.5 rounded-full ${
+            connectionStatus === 'checking' ? 'animate-pulse bg-sol-bright-green/50' :
+            connectionStatus === 'connected' ? 'bg-sol-bright-green shadow-[0_0_10px_#39ff14]' :
+            'bg-red-500 shadow-[0_0_10px_#ff0000]'
+          }`} 
+        />
+        <div className="cyberpunk bg-sol-background container flex flex-col">
+          <span className="text-sol-bright-green">
+            {connectionStatus === 'checking' ? 'Connecting...' :
+            connectionStatus === 'connected' ? 'Connected' :
+            'Disconnected'}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 };
