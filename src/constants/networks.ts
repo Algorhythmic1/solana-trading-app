@@ -8,22 +8,26 @@ export const NETWORKS: NetworkInfo[] = [
   { 
     name: 'localnet', 
     endpoint: 'http://127.0.0.1:8899',
-    cluster: 'devnet' // fallback for clusterApiUrl
+    cluster: 'devnet',
+    explorerUrl: 'https://explorer.solana.com'
   },
   { 
     name: 'devnet', 
     endpoint: clusterApiUrl('devnet'),
-    cluster: 'devnet'
+    cluster: 'devnet',
+    explorerUrl: 'https://explorer.solana.com'
   },
   { 
     name: 'testnet', 
     endpoint: clusterApiUrl('testnet'),
-    cluster: 'testnet'
+    cluster: 'testnet',
+    explorerUrl: 'https://explorer.solana.com'
   },
   { 
     name: 'mainnet-beta', 
     endpoint: 'https://mainnet.helius-rpc.com/?api-key=34ff2ba3-5858-43cc-a351-b2cf9b3420fb',
-    cluster: 'mainnet-beta'
+    cluster: 'mainnet-beta',
+    explorerUrl: 'https://explorer.solana.com'
   }
 ];
 

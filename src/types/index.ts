@@ -6,6 +6,7 @@ export interface NetworkInfo {
   name: Network;
   endpoint: string;
   cluster?: Cluster;
+  explorerUrl: string;
 }
 
 export type ContextType = {

@@ -8,6 +8,7 @@ import {
   ConfirmedSignatureInfo 
 } from '@solana/web3.js';
 import { Navigate } from 'react-router-dom';
+import { ExplorerLink } from '../../components/ExplorerLink';
 
 interface HistoryPageProps {
   wallet: Keypair | null;
@@ -162,16 +163,9 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
               </div>
               
               <div className="mt-2">
-                <a
-                  href={`https://explorer.solana.com/tx/${tx.signature}?cluster=${
-                    connection.rpcEndpoint.includes('devnet') ? 'devnet' : 'mainnet'
-                  }`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-[#39ff14] hover:underline"
-                >
-                  View on Explorer →
-                </a>
+                <ExplorerLink type="tx" value={tx.signature}>
+                View on Explorer →
+                </ExplorerLink>
               </div>
             </div>
           ))}

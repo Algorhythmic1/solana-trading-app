@@ -18,7 +18,7 @@ import { WelcomePage } from './pages/Welcome';
 import { DashboardPage } from './pages/Dashboard';
 import { SendPage } from './pages/Send';
 import { HistoryPage } from './pages/History';
-//import { SettingsPage } from './pages/Settings';
+import { SettingsPage } from './pages/Settings';
 
 // Import types
 import type { NetworkInfo } from './types';
@@ -65,7 +65,16 @@ const createRouter = (
           element: <HistoryPage wallet={wallet} connection={connection} />,
           errorElement: <ErrorBoundary />
         },
-        // ... other routes ...
+        {
+          path: 'settings',
+          element: <SettingsPage 
+            wallet={wallet} 
+            connection={connection}
+            selectedNetwork={selectedNetwork}
+            setSelectedNetwork={setSelectedNetwork}
+          />,
+          errorElement: <ErrorBoundary />
+        }
       ],
     },
   ]);
