@@ -174,7 +174,7 @@ a.cyberpunk:hover::after {
   background: var(--neon-green);
   z-index: -1;
   filter: blur(10px);
-  opacity: 0.2;
+  opacity: 0.15;
 }
 
 /* Ensure content stays above grid */
