@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Navigate, useOutletContext } from 'react-router-dom';
 import type { ContextType } from '../../types';
+
+interface TokenBalance {
+  mint: string;
+  symbol: string;
+  balance: string;
+  decimals: number;
+}
 
 export const DashboardPage = () => {
   const { wallet, selectedNetwork } = useOutletContext<ContextType>();
   const [balance, setBalance] = useState<number | null>(null);
+  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Check for null wallet before useEffect
@@ -22,11 +31,29 @@ export const DashboardPage = () => {
       try {
         setLoading(true);
         const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
-        const balance = await connection.getBalance(wallet.publicKey);
-        setBalance(balance / LAMPORTS_PER_SOL);
+        const solBalance = await connection.getBalance(wallet.publicKey);
+        setBalance(solBalance / LAMPORTS_PER_SOL);
+
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+          wallet.publicKey,
+          {
+            programId: TOKEN_PROGRAM_ID,
+          }
+        );
+
+        const tokens = tokenAccounts.value.map(account => ({
+          mint: account.account.data.parsed.info.mint,
+          balance: account.account.data.parsed.info.tokenAmount.amount,
+          decimals: account.account.data.parsed.info.tokenAmount.decimals,
+          symbol: 'Unknown', // We'll fetch this from metadata later
+        }));
+
+        setTokenBalances(tokens);
+
       } catch (error) {
         console.error('Failed to fetch balance:', error);
         setBalance(null);
+        setTokenBalances([]);
       } finally {
         setLoading(false);
       }
@@ -54,6 +81,20 @@ export const DashboardPage = () => {
             </p>
           </div>
         </div>
+        {tokenBalances.length > 0 && (
+          <div className="card cyberpunk w-full max-w-4xl mx-auto mt-4">
+            <h2 className="cyberpunk">Token Balances</h2>
+            <div className="space-y-2">
+              {tokenBalances.map((token) => (
+                <div key={token.mint} className="text-sm">
+                  <p>
+                    {token.symbol}: {(Number(token.balance) / Math.pow(10, token.decimals)).toFixed(4)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
