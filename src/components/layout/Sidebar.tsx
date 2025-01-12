@@ -22,8 +22,8 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
         to={item.path}
         className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
           isActive 
-            ? 'bg-sol-green/20 text-sol-green' 
-            : 'text-sol-text hover:bg-sol-card hover:text-sol-green'
+            ? 'bg-[color:var(--sol-green)]/20 text-[color:var(--sol-green)] box-shadow-[0_0_10px_var(--sol-green)]' 
+            : 'text-[color:var(--sol-green)] hover:bg-[color:var(--sol-card)] hover:text-[color:var(--sol-bright-green)]'
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
       >

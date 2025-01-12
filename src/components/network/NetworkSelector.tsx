@@ -31,7 +31,8 @@ export const NetworkSelector = ({ selectedNetwork, onNetworkChange }: NetworkSel
   }, [selectedNetwork]);
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-sol-background border-2 border-sol-border rounded">
+    <div className="flex items-center gap-4 p-4 bg-[color:var(--sol-background)] border-2 border-[color:var(--sol-border)] rounded">
+      <div className="select-wrapper">
       <select
         value={selectedNetwork.name}
         onChange={(e) => {
@@ -46,17 +47,18 @@ export const NetworkSelector = ({ selectedNetwork, onNetworkChange }: NetworkSel
           </option>
         ))}
       </select>
+      </div>
       
-      <div className="flex bg-sol-background items-center gap-2">
+      <div className="flex items-center gap-2">
         <div 
-          className={`w-2.5 h-2.5 rounded-full ${
-            connectionStatus === 'checking' ? 'animate-pulse bg-sol-bright-green/50' :
-            connectionStatus === 'connected' ? 'bg-sol-bright-green shadow-[0_0_10px_#39ff14]' :
+          className={`w-3 h-3 rounded-full relative z-10 ${
+            connectionStatus === 'checking' ? 'animate-pulse bg-[color:var(--sol-bright-green)] opacity-50' :
+            connectionStatus === 'connected' ? 'bg-[color:var(--sol-bright-green)] shadow-[0_0_10px_#39ff14]' :
             'bg-red-500 shadow-[0_0_10px_#ff0000]'
           }`} 
         />
-        <div className="cyberpunk bg-sol-background container flex flex-col">
-          <span className="text-sol-bright-green">
+        <div className="cyberpunk container bg-[color:var(--sol-background)] flex flex-col">
+          <span className="text-[color:var(--sol-bright-green)]">
             {connectionStatus === 'checking' ? 'Connecting...' :
             connectionStatus === 'connected' ? 'Connected' :
             'Disconnected'}

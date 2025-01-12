@@ -76,7 +76,7 @@ const createRouter = (
           errorElement: <ErrorBoundary />
         }
       ],
-    },
+    }
   ]);
 
 const App = () => {

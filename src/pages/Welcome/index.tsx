@@ -131,7 +131,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
           )}
         </div>
 
-        <div className="text-center text-sol-green my-8">OR</div>
+        <div className="text-center text-sol-text my-8">OR</div>
 
         <form onSubmit={importWallet} className="mb-8 w-full max-w-[600px] mx-auto">
           <label className="block mb-2 text-sol-green">Import Existing Wallet</label>
@@ -151,7 +151,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
           </button>
         </form>
 
-        <div className="text-center text-sol-green my-8">OR</div>
+        <div className="text-center text-sol-text my-8">OR</div>
         
         <div className="w-full max-w-[600px] mx-auto">
           <button

@@ -1,11 +1,11 @@
 :root {
   /* Colors */
-  --sol-green: #26fe00e6;
-  --sol-bright-green: #51ff00;
+  --sol-green: #21de00e6;
+  --sol-bright-green: #4ff701;
   --sol-green-opacity: #39ff1442;
   --sol-background: rgb(0,0,0,0.75);
   --sol-card: #1a1a1a;
-  --sol-text: #ffffff;
+  --sol-text: #000000;
   --sol-border: #000000b9;
   --sol-accent: #ff003c;
   --sol-error: #ff0033;

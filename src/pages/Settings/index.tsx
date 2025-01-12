@@ -162,13 +162,15 @@ export const SettingsPage = ({
         {/* Private Key Export */}
         <div className="card cyberpunk">
           <h2 className="cyberpunk text-xl mb-4">Wallet Security</h2>
-          <button
-            onClick={() => setShowPrivateKey(true)}
-            className="cyberpunk modal-btn hover:text-sol-error/80"
-            style={{ '--button-text-color': 'var(--sol-error)' } as React.CSSProperties}
-          >
-            Show Private Key
-          </button>
+          <div className="flex justify-center">
+            <button
+              onClick={() => setShowPrivateKey(true)}
+              className="cyberpunk modal-btn hover:text-sol-error/80"
+              style={{ '--button-text-color': 'var(--sol-error)' } as React.CSSProperties}
+            >
+              Show Private Key
+            </button>
+          </div>
         </div>
       </div>
 

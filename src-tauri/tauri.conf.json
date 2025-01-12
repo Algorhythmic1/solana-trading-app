@@ -14,6 +14,7 @@
       "icons/icon.ico",
       "icons/icon.png"
     ]
+    
   },
   "app": {
     "security": {
@@ -23,7 +24,8 @@
       {
         "title": "Trading App",
         "width": 1200,
-        "height": 1080
+        "height": 900,
+        "visible": true
       }
     ]
   }
