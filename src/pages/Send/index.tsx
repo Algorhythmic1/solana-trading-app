@@ -7,7 +7,9 @@ import {
   LAMPORTS_PER_SOL,
   Connection,
   Keypair,
-  sendAndConfirmTransaction
+  sendAndConfirmTransaction,
+  VersionedTransaction,
+  TransactionMessage
 } from '@solana/web3.js';
 import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
 
@@ -26,10 +28,7 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [pendingTx, setPendingTx] = useState<{
-    recipient: PublicKey;
-    amount: number;
-  } | null>(null);
+  const [pendingTx, setPendingTx] = useState<VersionedTransaction | null>(null);
 
   const validateAddress = (address: string): boolean => {
     try {
@@ -44,24 +43,32 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
     e.preventDefault();
     setError(null);
 
-    // Basic validation
     if (!validateAddress(recipient)) {
       setError('Invalid recipient address');
       return;
     }
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError('Invalid amount');
-      return;
-    }
-
     try {
       const recipientPubKey = new PublicKey(recipient);
-      setPendingTx({
-        recipient: recipientPubKey,
-        amount: parsedAmount
-      });
+      const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
+      
+      // Create versioned transaction
+      const latestBlockhash = await connection.getLatestBlockhash();
+      const transaction = new VersionedTransaction(
+        new TransactionMessage({
+          payerKey: wallet.publicKey,
+          recentBlockhash: latestBlockhash.blockhash,
+          instructions: [
+            SystemProgram.transfer({
+              fromPubkey: wallet.publicKey,
+              toPubkey: recipientPubKey,
+              lamports,
+            })
+          ],
+        }).compileToV0Message()
+      );
+
+      setPendingTx(transaction);
       setShowConfirmation(true);
     } catch (err) {
       setError('Invalid recipient address');
@@ -174,15 +181,16 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
 
       {showConfirmation && pendingTx && (
         <TransactionConfirmation
-          isOpen={showConfirmation}
+          transaction={pendingTx}
           onClose={() => {
             setShowConfirmation(false);
             setPendingTx(null);
           }}
           onConfirm={handleConfirmTransaction}
-          fromAddress={wallet.publicKey}
-          toAddress={pendingTx.recipient}
-          amount={pendingTx.amount}
+          expectedChanges={{
+            sol: -amount,
+            tokens: []  // TODO: Add token changes when implementing token transfers
+          }}
           connection={connection}
         />
       )}

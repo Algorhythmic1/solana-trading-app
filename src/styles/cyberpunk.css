@@ -401,3 +401,25 @@ table.cyberpunk tr:hover td {
   background-color: rgba(57, 255, 20, 0.1);
   box-shadow: 0 0 15px var(--sol-green-opacity);
 }
+
+/* Add this new style */
+input[type="number"].cyberpunk-compact,
+input[type="text"].cyberpunk-compact {
+  position: relative;
+  border: 1px solid var(--sol-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  font-weight: normal;
+  background-color: var(--sol-background);
+  color: var(--sol-text2);
+  box-shadow: 0px 0px 5px var(--sol-green-opacity);
+  transition: all 0.3s ease;
+}
+
+input[type="number"].cyberpunk-compact:focus,
+input[type="text"].cyberpunk-compact:focus {
+  border-color: var(--sol-green);
+  box-shadow: 0px 0px 10px var(--sol-green-opacity);
+  outline: none;
+}

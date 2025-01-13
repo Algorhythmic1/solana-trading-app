@@ -26,3 +26,31 @@ export interface JupiterToken {
   logoURI?: string;
   tags?: string[];
 }
+
+export interface JupiterQuote {
+  inputMint: string;
+  outputMint: string;
+  inAmount: number;
+  outAmount: number;
+  otherAmountThreshold: number;
+  swapMode: string;
+  slippageBps: number;
+  priceImpactPct: number | string;
+  routePlan: RoutePlanStep[];
+  contextSlot: number;
+  timeTaken: number;
+}
+
+interface RoutePlanStep {
+  swapInfo: {
+    ammKey: string;
+    label: string;
+    inputMint: string;
+    outputMint: string;
+    inAmount: number;
+    outAmount: number;
+    feeAmount: number;
+    feeMint: string;
+  };
+  percent: number;
+}

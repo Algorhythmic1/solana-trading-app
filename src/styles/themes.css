@@ -6,6 +6,7 @@
   --sol-background: rgb(0,0,0,0.75);
   --sol-card: #1a1a1a;
   --sol-text: #000000;
+  --sol-text2: #ffffff;
   --sol-border: #000000b9;
   --sol-accent: #ff003c;
   --sol-error: #ff0033;
@@ -28,7 +29,8 @@
   --sol-green-opacity: #e21dd9;
   --sol-background: rgb(0,0,0,0.75);
   --sol-card: #47476b;
-  --sol-text: #e6e6e6;
+  --sol-text: #000000;
+  --sol-text2: #ffffff;
   --sol-border: #005e73;
   --sol-accent: #ff00ff;
   --sol-error: #ff0066;

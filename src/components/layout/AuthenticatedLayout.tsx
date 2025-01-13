@@ -4,6 +4,7 @@ import { Keypair, Connection } from '@solana/web3.js';
 import { NetworkInfo } from '../../types';
 import { Sidebar } from './Sidebar';
 import { NetworkSelector } from '../network/NetworkSelector';
+import { NETWORKS } from '../../constants/networks';
 
 interface AuthenticatedLayoutProps {
   wallet: Keypair | null;
@@ -16,16 +17,17 @@ interface AuthenticatedLayoutProps {
 export const AuthenticatedLayout = ({ 
   wallet, 
   setWallet,
-  selectedNetwork,
-  setSelectedNetwork,
   connection
 }: AuthenticatedLayoutProps) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const navigate = useNavigate();  // Add this
+    const [selectedNetwork, setSelectedNetwork] = useState<NetworkInfo>(
+      NETWORKS.find(n => n.name === 'mainnet-beta') || NETWORKS[0]
+    );
+    const navigate = useNavigate();  
   
     const handleDisconnect = async () => {
       await setWallet(null);
-      navigate('/', { replace: true });  // Explicitly navigate
+      navigate('/', { replace: true });  
     };
   
     if (!wallet) {

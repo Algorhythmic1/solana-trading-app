@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { JupiterToken } from '../types';
 import { searchTokensByAny } from '../utils/getAllTokens';
+import { getValidImageUrl } from '../utils/tokenImage';
 
 interface TokenSelectorProps {
   onSelect: (token: JupiterToken) => void;
@@ -13,6 +14,28 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const TokenImage = ({ token }: { token: JupiterToken }) => {
+    const [imageError, setImageError] = useState(false);
+    const imageUrl = getValidImageUrl(token?.logoURI);
+
+    if (!token?.symbol || imageError) {
+      return (
+        <div className="w-8 h-8 bg-sol-card rounded-full flex items-center justify-center">
+          <span className="text-sm text-sol-green">{token?.symbol?.[0] || '?'}</span>
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={imageUrl}
+        alt={token.symbol}
+        className="w-8 h-8 rounded-full"
+        onError={() => setImageError(true)}
+      />
+    );
+  };
 
   // Search tokens when input changes
   useEffect(() => {
@@ -37,33 +60,32 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
     return () => clearTimeout(debounce);
   }, [search]);
 
+  const handleSelectorClick = () => {
+    if (value) {
+      onSelect({} as JupiterToken);
+      setSearch('');
+    }
+    setIsOpen(true);
+  };
+
   return (
     <div className="relative w-full">
       <div 
-        className="cyberpunk w-full cursor-pointer flex items-center gap-2"
-        onClick={() => setIsOpen(true)}
+        className="cyberpunk w-full bg-[var(--sol-background)] cursor-pointer flex items-center gap-3 p-2"
+        onClick={handleSelectorClick}
       >
         {value ? (
-          <>
-            {value.logoURI && (
-              <img 
-                src={value.logoURI} 
-                alt={value.symbol}
-                className="w-6 h-6 rounded-full"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/token-placeholder.png';
-                }}
-              />
-            )}
-            <span className="text-sol-green">{value.symbol}</span>
-          </>
+          <div className="flex items-center gap-3">
+            <TokenImage token={value} />
+            <span className="text-sol-green text-lg font-medium">{value.symbol}</span>
+          </div>
         ) : (
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="w-full bg-transparent border-none focus:outline-none"
+            className="w-full border-[var(--sol-green)] text-[var(--sol-text)] focus:outline-none"
             onFocus={() => setIsOpen(true)}
           />
         )}
@@ -75,37 +97,28 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute z-20 w-full mt-1 max-h-60 overflow-auto cyberpunk bg-sol-background">
+          <div className="absolute bg-[var(--sol-background)] z-20 w-full mt-1 max-h-60 overflow-auto cyberpunk">
             {loading ? (
               <div className="p-2 text-sol-text">Loading tokens...</div>
             ) : tokens.length === 0 ? (
-              <div className="p-2 text-sol-text">
+              <div className="p-2 text-sol-green">
                 {search ? 'No tokens found' : 'Type to search tokens'}
               </div>
             ) : (
               tokens.map(token => (
                 <div
                   key={token.address}
-                  className="flex items-center gap-2 p-2 hover:bg-sol-card cursor-pointer"
+                  className="flex items-center gap-3 p-3 hover:bg-sol-card cursor-pointer"
                   onClick={() => {
                     onSelect(token);
                     setSearch('');
                     setIsOpen(false);
                   }}
                 >
-                  {token.logoURI && (
-                    <img 
-                      src={token.logoURI} 
-                      alt={token.symbol}
-                      className="w-6 h-6 rounded-full"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/token-placeholder.png';
-                      }}
-                    />
-                  )}
+                  <TokenImage token={token} />
                   <div className="flex flex-col">
-                    <span className="text-sol-green font-bold">{token.symbol}</span>
-                    <span className="text-sol-text text-sm">{token.name}</span>
+                    <span className="text-sol-green font-bold text-base">{token.symbol}</span>
+                    <span className="text-[var(--sol-text2)] text-sm">{token.name}</span>
                   </div>
                 </div>
               ))
