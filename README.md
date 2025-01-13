@@ -1,6 +1,8 @@
 # Tauri + React + Typescript
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+This app contains some simple utilities for interacting with the Solana blockchain. It is built with Tauri, React, and Typescript, and is intended to be used as a desktop app.
+
+As of now, it only works on MacOS because it uses the MacOS keychain to store a wallet private key.
 
 ## Recommended IDE Setup
 
