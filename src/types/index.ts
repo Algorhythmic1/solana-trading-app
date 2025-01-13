@@ -16,3 +16,13 @@ export type ContextType = {
   setSelectedNetwork: (network: NetworkInfo) => void;
   connection: Connection;
 };
+
+export interface JupiterToken {
+  address: string;
+  chainId: number;
+  decimals: number;
+  name: string;
+  symbol: string;
+  logoURI?: string;
+  tags?: string[];
+}

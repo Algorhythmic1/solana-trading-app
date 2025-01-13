@@ -19,6 +19,7 @@ import { DashboardPage } from './pages/Dashboard';
 import { SendPage } from './pages/Send';
 import { HistoryPage } from './pages/History';
 import { SettingsPage } from './pages/Settings';
+import { SwapPage } from './pages/Swap';
 
 // Import types
 import type { NetworkInfo } from './types';
@@ -58,6 +59,11 @@ const createRouter = (
         {
           path: 'send',
           element: <SendPage wallet={wallet} connection={connection} />,
+          errorElement: <ErrorBoundary />
+        },
+        {
+          path: 'swap',
+          element: <SwapPage wallet={wallet} connection={connection} />,
           errorElement: <ErrorBoundary />
         },
         {

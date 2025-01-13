@@ -1,6 +1,6 @@
 // src/constants/networks.ts
 
-import { LayoutDashboard, SendHorizontal, History, Settings } from 'lucide-react';
+import { LayoutDashboard, SendHorizontal, History, Settings, ArrowLeftRight } from 'lucide-react';
 import { clusterApiUrl } from '@solana/web3.js';
 import { NetworkInfo } from '../types';
 
@@ -34,6 +34,7 @@ export const NETWORKS: NetworkInfo[] = [
 export const navigationItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Send', path: '/send', icon: SendHorizontal },
+  { name: 'Swap', path: '/swap', icon: ArrowLeftRight },
   { name: 'History', path: '/history', icon: History },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];

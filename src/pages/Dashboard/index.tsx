@@ -5,6 +5,7 @@ import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Navigate, useOutletContext } from 'react-router-dom';
 import type { ContextType } from '../../types';
+import { getAllTokens } from '../../utils/getAllTokens';
 
 interface TokenBalance {
   mint: string;
@@ -14,65 +15,6 @@ interface TokenBalance {
   image: string | null;
   name: string;
 }
-
-interface JupiterToken {
-  address: string;
-  symbol: string;
-  name: string;
-}
-
-const getJupiterTokenInfo = async (mintAddress: string) => {
-  try {
-    const response = await fetch('https://token.jup.ag/all');
-    const data = await response.json();
-    return data.find((token: JupiterToken) => token.address === mintAddress);
-  } catch (error) {
-    console.error('Error fetching Jupiter token list:', error);
-    return null;
-  }
-};
-  const getHeliusMetadata = async (mintAddress: string, apiKey: string) => {
-    try {
-      const response = await fetch(
-        `https://api.helius.xyz/v0/token-metadata?api-key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mintAccounts: [mintAddress],
-            includeOffChain: true,
-          }),
-      });
-      const data = await response.json();
-      return data[0];
-    } catch (error) {
-      console.error('Error fetching Helius metadata:', error);
-      return null;
-    }
-  };
-
-const getTokenMetadataWithFallback = async (
-  mintAddress: string, 
-  heliusApiKey: string
-) => {
-
-  // Try Jupiter first (fastest and most reliable)
-  const jupiterData = await getJupiterTokenInfo(mintAddress);
-  if (jupiterData) return jupiterData;
-
-  // If we have Helius API key, try that
-  if (heliusApiKey) {
-    const heliusData = await getHeliusMetadata(mintAddress, heliusApiKey);
-    if (heliusData) return heliusData;
-  }
-
-  // Return default values if nothing found
-  return {
-    symbol: 'Unknown',
-    image: null,
-    name: 'Unknown Token'
-  };
-};
-
 
 export const DashboardPage = () => {
   const { wallet, selectedNetwork } = useOutletContext<ContextType>();
@@ -100,20 +42,24 @@ export const DashboardPage = () => {
         { programId: TOKEN_PROGRAM_ID }
       );
 
-      const tokens = await Promise.all(tokenAccounts.value.map(async account => {
-        const metadata = await getTokenMetadataWithFallback(
-          account.account.data.parsed.info.mint,
-          localStorage.getItem('apiKey') || ''
-        );
+      //Get all tokens from the local sqlite database
+      const allTokens = await getAllTokens();
+      const tokenMap = new Map(allTokens.map(token => [token.address, token]));
+
+      // Map token accounts to balances with metadata
+      const tokens = tokenAccounts.value.map(account => {
+        const mintAddress = account.account.data.parsed.info.mint;
+        const tokenInfo = tokenMap.get(mintAddress);
+        
         return {
-          mint: account.account.data.parsed.info.mint,
+          mint: mintAddress,
           balance: account.account.data.parsed.info.tokenAmount.amount,
           decimals: account.account.data.parsed.info.tokenAmount.decimals,
-          symbol: metadata.symbol,
-          image: metadata.image,
-          name: metadata.name,
+          symbol: tokenInfo?.symbol || 'Unknown',
+          image: tokenInfo?.logoURI || null,
+          name: tokenInfo?.name || 'Unknown Token',
         };
-      }));
+      });
 
       const finalTokens = tokens.filter(token => token.balance !== '0');
 

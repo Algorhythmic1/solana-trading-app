@@ -21,6 +21,9 @@ bs58 = "0.5"
 core-foundation = "0.9.3"
 core-foundation-sys = "0.8.4"
 security-framework-sys = "2.9.1"
+rusqlite = { version = "0.29", features = ["bundled"] }
+reqwest = { version = "0.11", features = ["json"] }
+lazy_static = "1.4"
 
 
 [features]
