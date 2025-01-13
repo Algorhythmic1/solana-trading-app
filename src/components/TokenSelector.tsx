@@ -8,7 +8,7 @@ interface TokenSelectorProps {
   placeholder?: string;
 }
 
-export const TokenSelector = ({ onSelect, placeholder = "Search tokens..." }: TokenSelectorProps) => {
+export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens..." }: TokenSelectorProps) => {
   const [tokens, setTokens] = useState<JupiterToken[]>([]);
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -40,17 +40,33 @@ export const TokenSelector = ({ onSelect, placeholder = "Search tokens..." }: To
   return (
     <div className="relative w-full">
       <div 
-        className="cyberpunk w-full cursor-pointer"
+        className="cyberpunk w-full cursor-pointer flex items-center gap-2"
         onClick={() => setIsOpen(true)}
       >
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={placeholder}
-          className="w-full bg-transparent border-none focus:outline-none"
-          onFocus={() => setIsOpen(true)}
-        />
+        {value ? (
+          <>
+            {value.logoURI && (
+              <img 
+                src={value.logoURI} 
+                alt={value.symbol}
+                className="w-6 h-6 rounded-full"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/token-placeholder.png';
+                }}
+              />
+            )}
+            <span className="text-sol-green">{value.symbol}</span>
+          </>
+        ) : (
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={placeholder}
+            className="w-full bg-transparent border-none focus:outline-none"
+            onFocus={() => setIsOpen(true)}
+          />
+        )}
       </div>
 
       {isOpen && (

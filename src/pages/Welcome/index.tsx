@@ -100,6 +100,18 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
     }
   };
 
+  useEffect(() => {
+    const refreshTokens = async () => {
+      try {
+        await invoke('get_token_list');
+      } catch (error) {
+        console.error('Failed to refresh token list:', error);
+      }
+    };
+
+    refreshTokens();
+  }, []);
+
   return (
     <div className="h-full w-full bg-sol-background overflow-auto p-4 grid-bg">
       <div className="container cyberpunk max-w-full mb-8 bg-sol-background/50">
@@ -131,7 +143,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
           )}
         </div>
 
-        <div className="text-center text-sol-text my-8">OR</div>
+        <div className="text-center text-[color:var(--sol-green)] my-8">OR</div>
 
         <form onSubmit={importWallet} className="mb-8 w-full max-w-[600px] mx-auto">
           <label className="block mb-2 text-sol-green">Import Existing Wallet</label>
@@ -151,7 +163,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
           </button>
         </form>
 
-        <div className="text-center text-sol-text my-8">OR</div>
+        <div className="text-center text-[color:var(--sol-green)] my-8">OR</div>
         
         <div className="w-full max-w-[600px] mx-auto">
           <button

@@ -24,8 +24,9 @@
       {
         "title": "Trading App",
         "width": 1200,
-        "height": 900,
-        "visible": true
+        "height": 920,
+        "visible": true,
+        "resizable": true
       }
     ]
   }

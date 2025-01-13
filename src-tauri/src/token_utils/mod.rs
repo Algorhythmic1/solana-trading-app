@@ -8,10 +8,12 @@ use rusqlite::{Connection, params};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JupiterToken {
     pub address: String,
+    #[serde(rename = "chainId")]
     pub chain_id: i32,
     pub decimals: i32,
     pub name: String,
     pub symbol: String,
+    #[serde(rename = "logoURI")]
     pub logo_uri: Option<String>,
     pub tags: Option<Vec<String>>,
 }
@@ -103,19 +105,31 @@ impl TokenDatabase {
 
 #[tauri::command]
 pub async fn get_token_list() -> Result<Vec<JupiterToken>, String> {
+    println!("Checking token cache status");
     let mut cache = TOKEN_CACHE.lock().map_err(|e| e.to_string())?;
     
     // Check if we need to refresh the cache
     let should_refresh = match &*cache {
-        None => true,
+        None => {
+            println!("No cache found, will fetch tokens");
+            true
+        },
         Some(cached) => {
-            cached.last_updated.elapsed().map_err(|e| e.to_string())? > CACHE_DURATION
+            let is_stale = cached.last_updated.elapsed().map_err(|e| e.to_string())? > CACHE_DURATION;
+            println!("Cache found. Is stale: {}", is_stale);
+            is_stale
         }
     };
 
     if should_refresh {
-        // Fetch new token list
+        println!("Fetching fresh token list");
         let tokens = fetch_token_list().await?;
+        println!("Fetched {} tokens", tokens.len());
+        
+        // Update database
+        let mut db = TokenDatabase::new()?;
+        db.update_tokens(&tokens)?;
+        println!("Updated database with new tokens");
         
         // Update cache
         *cache = Some(CachedTokenList {
@@ -125,7 +139,7 @@ pub async fn get_token_list() -> Result<Vec<JupiterToken>, String> {
         
         Ok(tokens)
     } else {
-        // Return cached tokens
+        println!("Using cached token list");
         Ok(cache.as_ref().unwrap().tokens.clone())
     }
 }
@@ -148,8 +162,29 @@ async fn fetch_token_list() -> Result<Vec<JupiterToken>, String> {
 
 #[tauri::command]
 pub async fn get_all_tokens() -> Result<Vec<JupiterToken>, String> {
-    let db = TokenDatabase::new()?;
+    println!("Attempting to get all tokens from database");
+    let mut db = TokenDatabase::new()?;
+    
+    // Add count check
+    let count: i64 = db.conn.query_row(
+        "SELECT COUNT(*) FROM tokens",
+        [],
+        |row| row.get(0)
+    ).map_err(|e| e.to_string())?;
+    
+    println!("Found {} tokens in database", count);
+
+    if count == 0 {
+        println!("No tokens found in database, fetching from Jupiter");
+        let tokens = fetch_token_list().await?;
+        println!("Fetched {} tokens from Jupiter", tokens.len());
+        db.update_tokens(&tokens)?;
+        println!("Updated database with new tokens");
+    }
+    
     let tokens = db.get_tokens()?;
+    println!("Successfully retrieved {} tokens", tokens.len());
+    
     Ok(tokens)
 }
 

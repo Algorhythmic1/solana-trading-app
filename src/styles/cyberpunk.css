@@ -82,26 +82,26 @@ button.cyberpunk {
   --button-text-color: #2c2c2c;
   border: none;
   border-radius: 0%;
-  font-size: 1.5rem;
-  line-height: 1.5rem;
+  font-size: 1.125rem;  
+  line-height: 1.125rem;  
   letter-spacing: 2px;
   text-transform: uppercase;
   font-weight: 600;
-  padding: 35px 75px;
-  margin: 8px 16px 8px 0px;
+  padding: 26px 56px;  
+  margin: 6px 12px 6px 0px;  
   position: relative;
   color: var(--button-text-color, var(--sol-text));
   border-right: 3px solid var(--sol-border);
   clip-path: polygon(
-    -15px 0%,
-    calc(100% + 15px) 0%,
-    calc(100% + 15px) 100%,
-    20px 100%,
-    -15px calc(100% - 35px)
+    -11px 0%,  
+    calc(100% + 11px) 0%,  
+    calc(100% + 11px) 100%,  
+    15px 100%,  
+    -11px calc(100% - 26px)  
   );
   cursor: pointer;
   background-color: var(--background-color);
-  background-image:   /* Remove to get more of the original glow */
+  background-image:
   repeating-linear-gradient(
     45deg,
     var(--sol-background),

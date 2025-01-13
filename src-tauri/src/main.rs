@@ -12,7 +12,7 @@ use token_utils::{
     search_tokens_with_address, 
     search_tokens_with_name, 
     search_tokens_with_any
-  };
+};
 
 fn main() {
     tauri::Builder::default()
