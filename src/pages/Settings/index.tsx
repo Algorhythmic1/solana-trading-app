@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Keypair, Connection } from '@solana/web3.js';
 import { EXPLORERS } from '../../constants/explorers';
 import bs58 from 'bs58'; 
@@ -37,10 +37,17 @@ export const SettingsPage = ({
     return EXPLORERS[0];
   });
 
-  // Add this temporarily to Settings page to debug
-  useEffect(() => {
-    console.log('Current theme:', document.documentElement.getAttribute('data-theme'));
-  }, [theme]);
+  const [apiKey, setApiKey] = useState(() => {
+    return localStorage.getItem('apiKey') || '';
+  });
+  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  const handleApiKeySubmit = () => {
+    localStorage.setItem('apiKey', apiKey);
+    setIsEditingApiKey(false);
+    setShowApiKey(false);
+  };
   
   // RPC settings
   const [customRpcUrl, setCustomRpcUrl] = useState(selectedNetwork.endpoint);
@@ -114,6 +121,7 @@ export const SettingsPage = ({
           </div>
         </div>
 
+        {/*TO DO: clean this up so the API key is not in the rpc url*/}
         {/* RPC URL Settings */}
         <div className="card cyberpunk">
           <h2 className="cyberpunk text-xl mb-4">RPC Settings</h2>
@@ -171,6 +179,69 @@ export const SettingsPage = ({
               Show Private Key
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* API Key Settings */}
+      <div className="card cyberpunk">
+        <h2 className="cyberpunk text-xl mb-4">API Key</h2>
+        <div className="flex flex-col space-y-2">
+          {isEditingApiKey ? (
+            <>
+              <input
+                type="text"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="cyberpunk w-full"
+                placeholder="Enter API Key"
+              />
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleApiKeySubmit}
+                  className="cyberpunk modal-btn"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditingApiKey(false);
+                    setApiKey(localStorage.getItem('apiKey') || '');
+                  }}
+                  className="cyberpunk modal-btn"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sol-text">
+                  {apiKey ? (
+                    showApiKey ? (
+                      apiKey
+                    ) : (
+                      '••••••••••••••••'
+                    )                    ) : (
+                     'No API key set'
+                  )}
+                </span>
+                {apiKey && (
+                  <button
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="cyberpunk text-sm px-2 py-1"
+                  >
+                    {showApiKey ? 'Hide' : 'Show'}
+                  </button>
+                )}                </div>
+              <button
+                onClick={() => setIsEditingApiKey(true)}
+                className="cyberpunk modal-btn"
+              >
+                {apiKey ? 'Edit' : 'Add API Key'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

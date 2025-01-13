@@ -32,21 +32,21 @@ export const NetworkSelector = ({ selectedNetwork, onNetworkChange }: NetworkSel
 
   return (
     <div className="flex items-center gap-4 p-4 bg-[color:var(--sol-background)] border-2 border-[color:var(--sol-border)] rounded">
-      <div className="select-wrapper">
-      <select
-        value={selectedNetwork.name}
-        onChange={(e) => {
-          const network = NETWORKS.find(n => n.name === e.target.value as Network);
-          if (network) onNetworkChange(network);
-        }}
-        className="cyberpunk px-2 py-1 bg-sol-background text-sol-bright-green border-none focus:outline-none"
-      >
-        {NETWORKS.map(network => (
-          <option key={network.name} value={network.name} className="bg-[#0a0a0a]">
-            {network.name.charAt(0).toUpperCase() + network.name.slice(1)}
-          </option>
-        ))}
-      </select>
+      <div className="select-wrapper w-[250px]">
+        <select
+          value={selectedNetwork.name}
+          onChange={(e) => {
+            const network = NETWORKS.find(n => n.name === e.target.value as Network);
+            if (network) onNetworkChange(network);
+          }}
+          className="cyberpunk px-2 py-1 bg-sol-background text-sol-bright-green border-none focus:outline-none w-full"
+        >
+          {NETWORKS.map(network => (
+            <option key={network.name} value={network.name} className="bg-[#0a0a0a]">
+              {network.name.charAt(0).toUpperCase() + network.name.slice(1)}
+            </option>
+          ))}
+        </select>
       </div>
       
       <div className="flex items-center gap-2">
