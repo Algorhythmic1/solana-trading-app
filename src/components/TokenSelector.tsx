@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { JupiterToken } from '../types';
+import { searchTokensByAny } from '../utils/getAllTokens';
 
 interface TokenSelectorProps {
   onSelect: (token: JupiterToken) => void;
@@ -13,31 +14,28 @@ export const TokenSelector = ({ onSelect, placeholder = "Search tokens..." }: To
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Search tokens when input changes
   useEffect(() => {
-    const fetchTokens = async () => {
+    const searchTokens = async () => {
+      if (!search) {
+        setTokens([]);
+        return;
+      }
+
       setLoading(true);
       try {
-        const response = await fetch('https://token.jup.ag/all');
-        const data = await response.json();
-        setTokens(data);
+        const results = await searchTokensByAny(search);
+        setTokens(results);
       } catch (error) {
-        console.error('Failed to fetch tokens:', error);
+        console.error('Failed to search tokens:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTokens();
-  }, []);
-
-  const filteredTokens = useMemo(() => {
-    const searchLower = search.toLowerCase();
-    return tokens.filter(token => 
-      token.symbol.toLowerCase().includes(searchLower) ||
-      token.name.toLowerCase().includes(searchLower) ||
-      token.address.toLowerCase().includes(searchLower)
-    );
-  }, [tokens, search]);
+    const debounce = setTimeout(searchTokens, 300);
+    return () => clearTimeout(debounce);
+  }, [search]);
 
   return (
     <div className="relative w-full">
@@ -64,10 +62,12 @@ export const TokenSelector = ({ onSelect, placeholder = "Search tokens..." }: To
           <div className="absolute z-20 w-full mt-1 max-h-60 overflow-auto cyberpunk bg-sol-background">
             {loading ? (
               <div className="p-2 text-sol-text">Loading tokens...</div>
-            ) : filteredTokens.length === 0 ? (
-              <div className="p-2 text-sol-text">No tokens found</div>
+            ) : tokens.length === 0 ? (
+              <div className="p-2 text-sol-text">
+                {search ? 'No tokens found' : 'Type to search tokens'}
+              </div>
             ) : (
-              filteredTokens.map(token => (
+              tokens.map(token => (
                 <div
                   key={token.address}
                   className="flex items-center gap-2 p-2 hover:bg-sol-card cursor-pointer"

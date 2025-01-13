@@ -198,3 +198,25 @@ pub async fn search_tokens_with_name(query: String) -> Result<Vec<JupiterToken>,
     .collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
     Ok(tokens)
 }
+
+#[tauri::command]
+pub async fn search_tokens_with_any(query: String) -> Result<Vec<JupiterToken>, String> {
+    let db = TokenDatabase::new()?;
+    let mut stmt = db.conn.prepare(
+        "SELECT * FROM tokens WHERE LOWER(name) LIKE LOWER(?1) OR address LIKE ?1LIMIT 10"
+    ).map_err(|e| e.to_string())?;
+    let search = format!("%{}%", query);
+    let tokens = stmt.query_map([search], |row| {
+        Ok(JupiterToken {
+            address: row.get(0)?,
+            chain_id: row.get(1)?,
+            decimals: row.get(2)?,
+            name: row.get(3)?,
+            symbol: row.get(4)?,
+            logo_uri: row.get(5)?,
+            tags: None,
+        })
+    }).map_err(|e| e.to_string())?
+    .collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
+    Ok(tokens)
+}

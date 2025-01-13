@@ -6,6 +6,7 @@ import { getSwapQuote } from '../../utils/getSwapQuote';
 import type { JupiterToken } from '../../types';
 import { Keypair, Connection } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { searchTokensByAny } from '../../utils/getAllTokens';
 
 interface SwapPageProps {
   wallet: Keypair | null;
@@ -98,23 +99,23 @@ export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
           { programId: TOKEN_PROGRAM_ID }
         );
 
-        const tokens = await Promise.all(tokenAccounts.value.map(async account => {
+        const tokens = (await Promise.all(tokenAccounts.value.map(async account => {
           const mintAddress = account.account.data.parsed.info.mint;
           const balance = account.account.data.parsed.info.tokenAmount.amount;
           const decimals = account.account.data.parsed.info.tokenAmount.decimals;
 
-          const response = await fetch('https://token.jup.ag/all');
-          const allTokens = await response.json();
-          const tokenInfo = allTokens.find((t: JupiterToken) => t.address === mintAddress);
+          const tokenInfo = (await searchTokensByAny(mintAddress))[0];
+          
+          if (!tokenInfo) return null;
 
           return {
             ...tokenInfo,
             balance,
             decimals,
-          };
-        }));
+          } as TokenWithBalance;
+        }))).filter((t): t is TokenWithBalance => t !== null);
 
-        setWalletTokens(tokens.filter((t): t is TokenWithBalance => t !== null));
+        setWalletTokens(tokens);
       } catch (error) {
         console.error('Failed to fetch token balances:', error);
       }

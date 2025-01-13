@@ -36,3 +36,12 @@ export async function searchTokensByName(name: string): Promise<Token[]> {
     throw error;
   }
 }
+
+export async function searchTokensByAny(query: string): Promise<Token[]> {
+  try {
+    return await invoke<Token[]>('search_tokens_with_any', { query });
+  } catch (error) {
+    console.error('Failed to search tokens by any:', error);
+    throw error;
+  }
+}

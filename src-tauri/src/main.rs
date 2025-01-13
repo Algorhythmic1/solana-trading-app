@@ -1,8 +1,18 @@
 mod keyring;
 mod token_utils;
 
-use keyring::{save_to_keyring, load_from_keyring, list_stored_wallets};
-use token_utils::{get_all_tokens, search_tokens_with_address, search_tokens_with_name};
+use keyring::{
+  save_to_keyring, 
+  load_from_keyring, 
+  list_stored_wallets
+};
+
+use token_utils::{
+    get_all_tokens, 
+    search_tokens_with_address, 
+    search_tokens_with_name, 
+    search_tokens_with_any
+  };
 
 fn main() {
     tauri::Builder::default()
@@ -13,6 +23,7 @@ fn main() {
             get_all_tokens,
             search_tokens_with_address,
             search_tokens_with_name,
+            search_tokens_with_any,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
