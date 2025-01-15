@@ -25,5 +25,9 @@ dist-ssr
 *.sw?
 .env
 
+# Windows artifact trash
+*:Zone.Identifier
+*:shield
+
 # App database
 src-tauri/tokens.db
