@@ -5,26 +5,33 @@ description = "A Tauri App"
 authors = ["algorhythmic"]
 edition = "2021"
 
-[build-dependencies]
-tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
 tauri = { version = "2.0", features = [] }
+tauri-utils = "2.1.1"
+tauri-plugin-opener = "2.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 base64 = "0.22.1"
-keyring = "3.6.1"
-tauri-plugin-opener = "2.0.0"
-security-framework = "2.9.2"
+keyring = { version = "3.6.1", default-features = false }
 solana-sdk = "1.17"
 bs58 = "0.5"
-core-foundation = "0.9.3"
-core-foundation-sys = "0.8.4"
-security-framework-sys = "2.9.1"
 rusqlite = { version = "0.29", features = ["bundled"] }
 reqwest = { version = "0.11", features = ["json"] }
 lazy_static = "1.4"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3.6.1", features = ["windows-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6.1", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6.1", features = ["sync-secret-service"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }

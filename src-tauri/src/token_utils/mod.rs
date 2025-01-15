@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use lazy_static::lazy_static;
+//use std::sync::Mutex;
+use std::time::{ SystemTime, UNIX_EPOCH};
+//use lazy_static::lazy_static;
 use reqwest;
 use rusqlite::{Connection, params};
 
@@ -18,16 +18,8 @@ pub struct JupiterToken {
     pub tags: Option<Vec<String>>,
 }
 
-struct CachedTokenList {
-    tokens: Vec<JupiterToken>,
-    last_updated: SystemTime,
-}
 
-lazy_static! {
-    static ref TOKEN_CACHE: Mutex<Option<CachedTokenList>> = Mutex::new(None);
-}
-
-const CACHE_DURATION: Duration = Duration::from_secs(1800); // 30 minutes
+//const CACHE_DURATION: Duration = Duration::from_secs(1800); // 30 minutes
 const JUPITER_TOKEN_LIST_URL: &str = "https://token.jup.ag/all";
 
 pub struct TokenDatabase {
@@ -103,46 +95,6 @@ impl TokenDatabase {
     }
 }
 
-#[tauri::command]
-pub async fn get_token_list() -> Result<Vec<JupiterToken>, String> {
-    println!("Checking token cache status");
-    let mut cache = TOKEN_CACHE.lock().map_err(|e| e.to_string())?;
-    
-    // Check if we need to refresh the cache
-    let should_refresh = match &*cache {
-        None => {
-            println!("No cache found, will fetch tokens");
-            true
-        },
-        Some(cached) => {
-            let is_stale = cached.last_updated.elapsed().map_err(|e| e.to_string())? > CACHE_DURATION;
-            println!("Cache found. Is stale: {}", is_stale);
-            is_stale
-        }
-    };
-
-    if should_refresh {
-        println!("Fetching fresh token list");
-        let tokens = fetch_token_list().await?;
-        println!("Fetched {} tokens", tokens.len());
-        
-        // Update database
-        let mut db = TokenDatabase::new()?;
-        db.update_tokens(&tokens)?;
-        println!("Updated database with new tokens");
-        
-        // Update cache
-        *cache = Some(CachedTokenList {
-            tokens: tokens.clone(),
-            last_updated: SystemTime::now(),
-        });
-        
-        Ok(tokens)
-    } else {
-        println!("Using cached token list");
-        Ok(cache.as_ref().unwrap().tokens.clone())
-    }
-}
 
 async fn fetch_token_list() -> Result<Vec<JupiterToken>, String> {
     let client = reqwest::Client::new();

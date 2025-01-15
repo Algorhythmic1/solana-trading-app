@@ -32,6 +32,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
     const loadStoredWallets = async () => {
       try {
         const wallets = await invoke<StoredWallet[]>('list_stored_wallets');
+        console.log('Loaded wallets:', wallets);
         setStoredWallets(wallets);
       } catch (error) {
         console.error('Error loading stored wallets:', error);
@@ -120,7 +121,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
         <div className="mb-8 w-full max-w-[600px] mx-auto">
           <label className="block mb-2 text-sol-green">Stored Wallets</label>
           {storedWallets.length === 0 ? (
-            <p className="text-sol-text text-center">No stored wallets found</p>
+            <p className="text-sol-green text-center">No stored wallets found</p>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto w-full">
               {storedWallets.map((wallet) => (
