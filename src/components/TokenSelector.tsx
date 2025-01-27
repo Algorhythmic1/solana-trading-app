@@ -85,7 +85,7 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="w-full border-[var(--sol-green)] text-[var(--sol-text)] focus:outline-none"
+            className="w-full bg-sol-card text-[var(--sol-text)] focus:outline-none rounded px-2"
             onFocus={() => setIsOpen(true)}
           />
         )}

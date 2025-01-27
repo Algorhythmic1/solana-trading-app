@@ -13,7 +13,7 @@ export async function getSwapQuote(
     slippage
   });
 
-  const url = new URL('https://quote-api.jup.ag/v6/quote');
+  const url = new URL('https://api.jup.ag/swap/v1/quote');
   url.searchParams.append('inputMint', inputMint);
   url.searchParams.append('outputMint', outputMint);
   url.searchParams.append('amount', amount.toString());

@@ -11,10 +11,14 @@ export async function executeSwap(
   connection: Connection
 ): Promise<SwapResult> {
   try {
-    const txid = await connection.sendTransaction(transaction);
+    const txid = await connection.sendTransaction(transaction, {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed',
+      maxRetries: 3
+    });
     
     // Use newer confirmation API
-    const latestBlockhash = await connection.getLatestBlockhash();
+    const latestBlockhash = await connection.getLatestBlockhash('confirmed');
     const confirmation = await connection.confirmTransaction({
       signature: txid,
       blockhash: latestBlockhash.blockhash,

@@ -86,7 +86,6 @@ pub async fn load_from_keyring(index: i32) -> Result<String, KeyringError> {
     };
     match entry.get_password() {
         Ok(password) => {
-            println!("Successfully loaded password: {}", password);
             Ok(password)
         },
         Err(e) => {

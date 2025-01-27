@@ -101,15 +101,16 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
     }
   };
 
-  useEffect(() => {
-    const refreshTokens = async () => {
-      try {
-        await invoke('get_token_list');
-      } catch (error) {
-        console.error('Failed to refresh token list:', error);
-      }
-    };
+  const refreshTokens = async () => {
+    try {
+      console.log('Refreshing token list in database');
+      await invoke('update_tokens');  // This updates the token database
+    } catch (error) {
+      console.error('Failed to refresh token list:', error);
+    }
+  };
 
+  useEffect(() => {
     refreshTokens();
   }, []);
 

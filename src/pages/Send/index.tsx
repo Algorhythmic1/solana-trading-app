@@ -1,30 +1,30 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, useOutletContext } from 'react-router-dom';
 import { 
   PublicKey, 
-  Transaction, 
   SystemProgram, 
   LAMPORTS_PER_SOL,
   Connection,
-  Keypair,
-  sendAndConfirmTransaction,
   VersionedTransaction,
   TransactionMessage
 } from '@solana/web3.js';
 import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
+import { TokenSelector } from '../../components/TokenSelector';
+import { TokenWithBalance, ContextType } from '../../types';
+import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
 
-interface SendPageProps {
-  wallet: Keypair | null;
-  connection: Connection;
-}
 
-export const SendPage = ({ wallet, connection }: SendPageProps) => {
+export const SendPage = () => {
+  const { wallet, selectedNetwork, } = useOutletContext<ContextType>();
+
   if (!wallet) {
     return <Navigate to="/dashboard" replace />;
   }
 
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
+  const [token, setToken] = useState<TokenWithBalance | null>(null);
+  const [walletTokens, setWalletTokens] = useState<TokenWithBalance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -39,7 +39,29 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
     }
   };
 
+  useEffect(() => {
+    const handleFetchTokens = async () => {
+      if (!wallet) return;
+      
+      try {
+        const tokens = await fetchTokenBalances({
+          wallet,
+          selectedNetwork,
+          setLoading
+        });
+        setWalletTokens(tokens);
+      } catch (error) {
+        console.error('Failed to fetch token balances:', error);
+        setWalletTokens([]);
+      }
+    };
+
+    handleFetchTokens();
+  }, [wallet, selectedNetwork]);
+
   const handleSubmit = async (e: React.FormEvent) => {
+
+    const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     e.preventDefault();
     setError(null);
 
@@ -48,12 +70,16 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
       return;
     }
 
+    if (!token) {
+      setError('No token selected');
+      return;
+    }
+
     try {
       const recipientPubKey = new PublicKey(recipient);
       const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
       
-      // Create versioned transaction
-      const latestBlockhash = await connection.getLatestBlockhash();
+      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
       const transaction = new VersionedTransaction(
         new TransactionMessage({
           payerKey: wallet.publicKey,
@@ -78,38 +104,25 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
   const handleConfirmTransaction = async () => {
     if (!pendingTx) return;
     setLoading(true);
-    const parsedAmount = parseFloat(amount);
+
+    const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError('Invalid amount');
-      return;
-    }
-
     try {
-      const recipientPubKey = new PublicKey(recipient);
-      const lamports = parsedAmount * LAMPORTS_PER_SOL;
+      // Sign and send the versioned transaction
+      pendingTx.sign([wallet]);
+      const signature = await connection.sendTransaction(pendingTx, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 3
+      });
 
-      // Create transaction
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: wallet.publicKey,
-          toPubkey: recipientPubKey,
-          lamports,
-        })
-      );
-
-      // Get latest blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = wallet.publicKey;
-
-      // Send and confirm transaction
-      const signature = await sendAndConfirmTransaction(
-        connection,
-        transaction,
-        [wallet],
-        { commitment: 'confirmed' }
-      );
+      // Confirm transaction
+      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+      await connection.confirmTransaction({
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+      });
 
       console.log('Transaction confirmed:', signature);
 
@@ -119,8 +132,6 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
       setShowConfirmation(false);
       setPendingTx(null);
       
-      // TODO: Show success message or redirect to transaction history
-      
     } catch (err) {
       console.error('Transaction error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send transaction');
@@ -129,9 +140,15 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
     }
   };
 
+  const handleMaxAmount = () => {
+    if (token?.balance) {
+      setAmount((Number(token.balance) / Math.pow(10, token.decimals)).toString());
+    }
+  };
+
   return (
     <div className="container cyberpunk min-h-screen p-8 bg-sol-background">
-      <h1 className="cyberpunk text-sol-green text-2xl mb-8">Send SOL</h1>
+      <h1 className="cyberpunk text-sol-green text-4xl mb-8">Send SOL</h1>
       
       <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
         <div>
@@ -148,20 +165,46 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
           />
         </div>
 
+        <div className="flex-1">
+          <TokenSelector
+            value={token || undefined}
+            onSelect={(selectedToken) => {
+              const withBalance = walletTokens.find(t => t.address === selectedToken.address);
+              if (withBalance) {
+                setToken(withBalance);
+              }
+            }}
+            placeholder="Select token to send..."
+          />
+          {token?.balance && (
+            <div className="text-sm text-[color:var(--sol-green)] mt-1">
+              Balance: {(Number(token.balance) / Math.pow(10, token.decimals)).toFixed(4)}
+            </div>
+          )}
+        </div>
+
         <div>
           <label className="block text-sol-green mb-2">
-            Amount (SOL)
+            Amount
           </label>
           <input
             type="number"
             step="any"
             min="0"
-            className="cyberpunk w-full"
+            className="cyberpunk-compact w-full"
             placeholder="0.0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             disabled={loading}
           />
+          {token?.balance && (
+            <button
+              onClick={handleMaxAmount}
+              className="cyberpunk text-xs py-0.5"
+            >
+              Max
+            </button>
+          )}
         </div>
 
         {error && (
@@ -189,9 +232,9 @@ export const SendPage = ({ wallet, connection }: SendPageProps) => {
           onConfirm={handleConfirmTransaction}
           expectedChanges={{
             sol: -amount,
-            tokens: []  // TODO: Add token changes when implementing token transfers
+            tokens: []
           }}
-          connection={connection}
+          connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
         />
       )}
     </div>

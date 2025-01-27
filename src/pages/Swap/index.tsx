@@ -3,25 +3,20 @@ import { Navigate } from 'react-router-dom';
 import { ArrowDownUp } from 'lucide-react';
 import { TokenSelector } from '../../components/TokenSelector';
 import { getSwapQuote } from '../../utils/getSwapQuote';
-import type { JupiterToken, JupiterQuote } from '../../types';
+import type { TokenWithBalance, JupiterQuote, NetworkInfo } from '../../types';
 import { Keypair, Connection, VersionedTransaction } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { searchTokensByAny } from '../../utils/getAllTokens';
 import { QuoteDetails } from '../../components/QuoteDetails';
 import { executeSwap } from '../../utils/executeSwap';
 import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
+import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
 
-interface SwapPageProps {
+export interface SwapPageProps {
   wallet: Keypair | null;
   connection: Connection;
+  selectedNetwork: NetworkInfo;
 }
 
-interface TokenWithBalance extends JupiterToken {
-  balance?: string;
-  decimals: number;
-}
-
-export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
+export const SwapPage = ({ wallet, selectedNetwork }: SwapPageProps) => {
   const [fromToken, setFromToken] = useState<TokenWithBalance | null>(null);
   const [toToken, setToToken] = useState<TokenWithBalance | null>(null);
   const [walletTokens, setWalletTokens] = useState<TokenWithBalance[]>([]);
@@ -101,70 +96,26 @@ export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
 
   // Fetch wallet token balances
   useEffect(() => {
-    const fetchTokenBalances = async () => {
+    const handleFetchTokens = async () => {
       if (!wallet) return;
+      
       try {
-        console.log('Fetching token accounts for:', wallet.publicKey.toString());
-        
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-          wallet.publicKey,
-          { programId: TOKEN_PROGRAM_ID },
-          'confirmed'  // Add commitment level
-        );
-
-        console.log('Found token accounts:', tokenAccounts.value.length);
-
-        const tokens = (await Promise.all(tokenAccounts.value.map(async account => {
-          try {
-            const mintAddress = account.account.data.parsed.info.mint;
-            console.log('Processing token:', mintAddress);
-            
-            const balance = account.account.data.parsed.info.tokenAmount.amount;
-            const decimals = account.account.data.parsed.info.tokenAmount.decimals;
-
-            // Get token info with retries
-            let tokenInfo = null;
-            for (let i = 0; i < 3; i++) {  // Try up to 3 times
-              try {
-                tokenInfo = (await searchTokensByAny(mintAddress))[0];
-                if (tokenInfo) break;
-              } catch (err) {
-                console.warn(`Attempt ${i + 1} failed for token ${mintAddress}:`, err);
-                await new Promise(resolve => setTimeout(resolve, 1000));  // Wait 1s between retries
-              }
-            }
-            
-            if (!tokenInfo) {
-              console.warn(`No token info found for ${mintAddress}`);
-              return null;
-            }
-
-            return {
-              ...tokenInfo,
-              balance,
-              decimals,
-            } as TokenWithBalance;
-          } catch (err) {
-            console.warn(`Failed to fetch token info for account:`, err);
-            return null;
-          }
-        }))).filter((t): t is TokenWithBalance => t !== null);
-
-        console.log('Successfully processed tokens:', tokens.length);
+        const tokens = await fetchTokenBalances({
+          wallet,
+          selectedNetwork,
+          setLoading
+        });
         setWalletTokens(tokens);
       } catch (error) {
         console.error('Failed to fetch token balances:', error);
-        // Don't let token balance failures crash the UI
         setWalletTokens([]);
       }
     };
 
-    fetchTokenBalances();
-    
-    // Set up periodic refresh
-    const intervalId = setInterval(fetchTokenBalances, 30000);  // Refresh every 30s
+    handleFetchTokens();
+    const intervalId = setInterval(handleFetchTokens, 30000);
     return () => clearInterval(intervalId);
-  }, [wallet, connection]);
+  }, [wallet, selectedNetwork]);
 
   const handleMaxAmount = () => {
     if (fromToken?.balance) {
@@ -204,6 +155,30 @@ export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
     }
   };
 
+  const handleConfirmSwap = async () => {
+    if (!transaction) return;
+    setIsSwapping(true);
+    
+    const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
+    
+    try {
+      const result = await executeSwap(transaction, connection);
+      if (result.success) {
+        setShowConfirmation(false);
+        setTransaction(null);
+        // Clear form
+        setFromAmount('');
+        setToAmount('');
+      } else {
+        setError(result.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to execute swap');
+    } finally {
+      setIsSwapping(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 bg-dark-bg">
       <h1 className="text-xl text-sol-green mb-4">Swap Tokens</h1>
@@ -218,9 +193,11 @@ export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
                 <div className="flex-1">
                   <TokenSelector
                     value={fromToken || undefined}
-                    onSelect={(token) => {
-                      const withBalance = walletTokens.find(t => t.address === token.address);
-                      setFromToken(withBalance || token);
+                    onSelect={(selectedToken) => {
+                      const withBalance = walletTokens.find(t => t.address === selectedToken.address);
+                      if (withBalance) {
+                        setFromToken(withBalance);
+                      }
                     }}
                     placeholder="Select token to swap from..."
                   />
@@ -270,7 +247,12 @@ export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
                 <div className="flex-1">
                   <TokenSelector
                     value={toToken || undefined}
-                    onSelect={setToToken}
+                    onSelect={(selectedToken) => {
+                      const withBalance = walletTokens.find(t => t.address === selectedToken.address);
+                      if (withBalance) {
+                        setToToken(withBalance);
+                      }
+                    }}
                     placeholder="Select token to swap to..."
                   />
                 </div>
@@ -378,27 +360,7 @@ export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
                 setShowConfirmation(false);
                 setTransaction(null);
               }}
-              onConfirm={async () => {
-                try {
-                  setIsSwapping(true);
-                  const result = await executeSwap(transaction, connection);
-                  
-                  if (result.success) {
-                    console.log('Swap executed:', result.txid);
-                    setShowConfirmation(false);
-                    setTransaction(null);
-                    setFromAmount('');
-                    setToAmount('');
-                    setQuote(null);
-                  } else {
-                    setError(result.error || 'Failed to execute swap');
-                  }
-                } catch (error) {
-                  setError(error instanceof Error ? error.message : 'Failed to execute swap');
-                } finally {
-                  setIsSwapping(false);
-                }
-              }}
+              onConfirm={handleConfirmSwap}
               expectedChanges={{
                 sol: 0,
                 tokens: [
@@ -416,7 +378,7 @@ export const SwapPage = ({ wallet, connection }: SwapPageProps) => {
                   }
                 ]
               }}
-              connection={connection}
+              connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
             />
           )}
         </div>

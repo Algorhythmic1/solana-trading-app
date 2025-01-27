@@ -58,12 +58,16 @@ const createRouter = (
         },
         {
           path: 'send',
-          element: <SendPage wallet={wallet} connection={connection} />,
+          element: <SendPage />,
           errorElement: <ErrorBoundary />
         },
         {
           path: 'swap',
-          element: <SwapPage wallet={wallet} connection={connection} />,
+          element: <SwapPage 
+            wallet={wallet} 
+            connection={connection}
+            selectedNetwork={selectedNetwork}
+          />,
           errorElement: <ErrorBoundary />
         },
         {
@@ -90,15 +94,16 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkInfo>(NETWORKS[0]);
   const [connection, setConnection] = useState<Connection>(
-    new Connection(selectedNetwork.endpoint)
+    new Connection(selectedNetwork.endpoint, 'confirmed')
   );
   const hasTriedLoading = useRef(false);
 
   // Update connection when network changes
   useEffect(() => {
-    const newConnection = new Connection(selectedNetwork.endpoint);
+    console.log('Creating new connection for network:', selectedNetwork.name);
+    const newConnection = new Connection(selectedNetwork.endpoint, 'confirmed');
     setConnection(newConnection);
-  }, [selectedNetwork]);
+  }, [selectedNetwork.endpoint]);
 
   useEffect(() => {
     const loadInitialState = async () => {
