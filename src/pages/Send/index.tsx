@@ -22,6 +22,8 @@ export const SendPage = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const [pageLoading, setPageLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [token, setToken] = useState<TokenWithBalance | null>(null);
@@ -51,7 +53,7 @@ export const SendPage = () => {
         wallet,
         selectedNetwork,
         setBalance: setNativeSolBalance,
-        setLoading
+        setLoading: setPageLoading
       });
       console.log('Fetched tokens:', tokens);
       setWalletTokens(tokens);
@@ -196,7 +198,7 @@ export const SendPage = () => {
 
   const handleConfirmTransaction = async () => {
     if (!pendingTx) return;
-    setLoading(true);
+    setSending(true);
   
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
@@ -232,7 +234,7 @@ export const SendPage = () => {
       console.error('Transaction error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send transaction');
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
@@ -362,7 +364,9 @@ export const SendPage = () => {
             )
           }
         >
-          {loading ? 'Sending...' : 'Send'}
+          {pageLoading ? 'Loading...' : 
+          sending ?'Sending...' : 
+          'Send'}
         </button>
       </form>
 
