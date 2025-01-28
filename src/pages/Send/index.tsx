@@ -117,7 +117,7 @@ export const SendPage = () => {
           wallet,
           selectedNetwork,
           setBalance: setNativeSolBalance,
-          setLoading
+          setLoading: setPageLoading
         });
         console.log('Fetched tokens:', tokens);
         setWalletTokens(tokens);
