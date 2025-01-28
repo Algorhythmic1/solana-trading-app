@@ -19,7 +19,7 @@ const NATIVE_SOL_TOKEN: JupiterToken = {
   tags: undefined
 };
 
-const WSOL_MINT = 'So11111111111111111111111111111111111111112';
+const WSOL_MINT = 'So11111111111111111111111111ß111111111111112';
 
 export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens..." }: TokenSelectorProps) => {
   const [tokens, setTokens] = useState<JupiterToken[]>([]);

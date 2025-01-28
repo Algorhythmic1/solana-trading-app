@@ -32,6 +32,7 @@ export const SendPage = () => {
   const [walletTokens, setWalletTokens] = useState<TokenWithBalance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingTx, setPendingTx] = useState<VersionedTransaction | null>(null);
 
@@ -53,6 +54,7 @@ export const SendPage = () => {
         const tokens = await fetchTokenBalances({
           wallet,
           selectedNetwork,
+          setBalance: setNativeSolBalance,
           setLoading
         });
         console.log('Fetched tokens:', tokens);
@@ -179,8 +181,13 @@ export const SendPage = () => {
     if (token.address === 'native') {
       // Get native SOL balance from token.balance
       return (
-        <div className="text-sm text-[color:var(--sol-green)] mt-1">
-          Balance: {(Number(token.balance) / LAMPORTS_PER_SOL).toFixed(4)} SOL
+        <div className={`text-sm mt-1 ${nativeSolBalance === null || nativeSolBalance === 0 ? 'text-sol-error' : 'text-[color:var(--sol-green)]'}`}>
+          {nativeSolBalance === null 
+            ? 'Loading...'
+            : nativeSolBalance === 0
+              ? 'No balance to send'
+              : `Balance: ${nativeSolBalance.toFixed(4)} SOL`
+          }
         </div>
       );
     }
