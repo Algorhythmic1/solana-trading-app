@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { JupiterToken } from '../types';
-import { searchTokensByAny } from '../utils/getAllTokens';
+import { searchTokensByAny } from '../utils/tokenQueryUtils';
 import { getValidImageUrl } from '../utils/tokenImage';
 
 interface TokenSelectorProps {

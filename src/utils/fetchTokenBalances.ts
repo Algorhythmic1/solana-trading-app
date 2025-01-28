@@ -1,7 +1,7 @@
 import { Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { TokenWithBalance, NetworkInfo } from '../types';
-import { searchTokensByAny } from './getAllTokens';
+import { searchTokensByAny } from './tokenQueryUtils';
 
 interface FetchTokenBalancesOptions {
   wallet: Keypair;

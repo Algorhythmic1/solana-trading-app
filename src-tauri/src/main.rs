@@ -8,7 +8,8 @@ use keyring::{
 };
 
 use token_utils::{
-    get_all_tokens, 
+    update_token_db, 
+    get_all_tokens,
     search_tokens_with_address, 
     search_tokens_with_name, 
     search_tokens_with_any
@@ -20,6 +21,7 @@ fn main() {
             save_to_keyring,
             load_from_keyring,
             list_stored_wallets,
+            update_token_db,
             get_all_tokens,
             search_tokens_with_address,
             search_tokens_with_name,

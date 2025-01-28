@@ -133,7 +133,7 @@ pub async fn list_stored_wallets() -> Result<Vec<StoredWallet>, String> {
                 }
                 index += 1;
             },
-            Err(e) => {
+            Err(_e) => {
                 //println!("Rust: get_password() returned error: {}", e);
                 //println!("Rust: No more entries found. Last account searched: {} with error: {}", account, e);
                 break; // Stop if no more entries are found
