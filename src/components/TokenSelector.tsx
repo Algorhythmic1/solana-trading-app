@@ -9,6 +9,18 @@ interface TokenSelectorProps {
   placeholder?: string;
 }
 
+const NATIVE_SOL_TOKEN: JupiterToken = {
+  address: 'native', // Special case to identify native SOL
+  symbol: 'SOL',
+  name: 'Solana',
+  decimals: 9,
+  logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+  chainId: 101,
+  tags: undefined
+};
+
+const WSOL_MINT = 'So11111111111111111111111111111111111111112';
+
 export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens..." }: TokenSelectorProps) => {
   const [tokens, setTokens] = useState<JupiterToken[]>([]);
   const [search, setSearch] = useState('');
@@ -41,14 +53,21 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
   useEffect(() => {
     const searchTokens = async () => {
       if (!search) {
-        setTokens([]);
+        setTokens([NATIVE_SOL_TOKEN]);
         return;
       }
 
       setLoading(true);
       try {
         const results = await searchTokensByAny(search);
-        setTokens(results);
+        // Filter out wSOL from search results since we handle it specially
+        const filteredResults = results.filter(token => token.address !== WSOL_MINT);
+        // If "sol" is in the search, show native SOL first
+        if (search.toLowerCase().includes('sol')) {
+          setTokens([NATIVE_SOL_TOKEN, ...filteredResults]);
+        } else {
+          setTokens(filteredResults);
+        }
       } catch (error) {
         console.error('Failed to search tokens:', error);
       } finally {
@@ -62,10 +81,17 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
 
   const handleSelectorClick = () => {
     if (value) {
-      onSelect({} as JupiterToken);
+      onSelect({} as JupiterToken); // Clear selection
       setSearch('');
     }
     setIsOpen(true);
+  };
+
+  const handleTokenSelect = (token: JupiterToken) => {
+    console.log('TokenSelector - handleTokenSelect called with:', token);
+    onSelect(token);
+    setSearch('');
+    setIsOpen(false);
   };
 
   return (
@@ -74,7 +100,7 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
         className="cyberpunk w-full bg-[var(--sol-background)] cursor-pointer flex items-center gap-3 p-2"
         onClick={handleSelectorClick}
       >
-        {value ? (
+        {value?.symbol ? (
           <div className="flex items-center gap-3">
             <TokenImage token={value} />
             <span className="text-sol-green text-lg font-medium">{value.symbol}</span>
@@ -109,11 +135,7 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
                 <div
                   key={token.address}
                   className="flex items-center gap-3 p-3 hover:bg-sol-card cursor-pointer"
-                  onClick={() => {
-                    onSelect(token);
-                    setSearch('');
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleTokenSelect(token)}
                 >
                   <TokenImage token={token} />
                   <div className="flex flex-col">
@@ -128,4 +150,4 @@ export const TokenSelector = ({ onSelect, value, placeholder = "Search tokens...
       )}
     </div>
   );
-}; 
+};

@@ -119,7 +119,7 @@ export const TransactionConfirmation = ({
   );
 
   return (
-    <div className="card cyberpunk">
+    <div className="card cyberpunk w-full">
       <h2 className="cyberpunk text-xl mb-4">Confirm Transaction</h2>
       
       {loading ? (

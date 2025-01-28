@@ -21,6 +21,11 @@ export const SendPage = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  useEffect(() => {
+    console.log('Wallet context changed:', wallet);
+    console.log('Selected network changed:', selectedNetwork);
+  }, [wallet, selectedNetwork]);
+
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [token, setToken] = useState<TokenWithBalance | null>(null);
@@ -44,11 +49,13 @@ export const SendPage = () => {
       if (!wallet) return;
       
       try {
+        console.log('Fetching token balances...');
         const tokens = await fetchTokenBalances({
           wallet,
           selectedNetwork,
           setLoading
         });
+        console.log('Fetched tokens:', tokens);
         setWalletTokens(tokens);
       } catch (error) {
         console.error('Failed to fetch token balances:', error);
@@ -58,6 +65,11 @@ export const SendPage = () => {
 
     handleFetchTokens();
   }, [wallet, selectedNetwork]);
+
+  // See walletTokens when it changes
+  useEffect(() => {
+    console.log('walletTokens updated:', walletTokens);
+  }, [walletTokens]);
 
   const handleSubmit = async (e: React.FormEvent) => {
 
@@ -80,22 +92,42 @@ export const SendPage = () => {
       const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
       
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-      const transaction = new VersionedTransaction(
-        new TransactionMessage({
-          payerKey: wallet.publicKey,
+
+      if (token.address === 'native') {
+        const transaction = new VersionedTransaction(
+          new TransactionMessage({
+            payerKey: wallet.publicKey,
+            recentBlockhash: latestBlockhash.blockhash,
+            instructions: [
+              SystemProgram.transfer({
+                fromPubkey: wallet.publicKey,
+                toPubkey: recipientPubKey,
+                lamports,
+              })
+            ],
+          }).compileToV0Message()
+        );
+
+        setPendingTx(transaction);
+        setShowConfirmation(true);
+      } else {
+        const transaction = new VersionedTransaction(
+          new TransactionMessage({
+            payerKey: wallet.publicKey,
           recentBlockhash: latestBlockhash.blockhash,
           instructions: [
             SystemProgram.transfer({
-              fromPubkey: wallet.publicKey,
-              toPubkey: recipientPubKey,
-              lamports,
-            })
-          ],
-        }).compileToV0Message()
-      );
+                fromPubkey: wallet.publicKey,
+                toPubkey: recipientPubKey,
+                lamports,
+              })
+            ],
+          }).compileToV0Message()
+        );
 
-      setPendingTx(transaction);
-      setShowConfirmation(true);
+        setPendingTx(transaction);
+        setShowConfirmation(true);
+      }
     } catch (err) {
       setError('Invalid recipient address');
     }
@@ -140,6 +172,29 @@ export const SendPage = () => {
     }
   };
 
+  // Modify the balance display to handle native SOL
+  const getBalanceDisplay = () => {
+    if (!token) return null;
+
+    if (token.address === 'native') {
+      // Get native SOL balance from token.balance
+      return (
+        <div className="text-sm text-[color:var(--sol-green)] mt-1">
+          Balance: {(Number(token.balance) / LAMPORTS_PER_SOL).toFixed(4)} SOL
+        </div>
+      );
+    }
+
+    return (
+      <div className={`text-sm mt-1 ${token.balance === '0' ? 'text-sol-error' : 'text-[color:var(--sol-green)]'}`}>
+        {token.balance === '0' 
+          ? 'No balance to send'
+          : `Balance: ${(Number(token.balance) / Math.pow(10, token.decimals)).toFixed(4)} ${token.symbol}`
+        }
+      </div>
+    );
+  };
+
   const handleMaxAmount = () => {
     if (token?.balance) {
       setAmount((Number(token.balance) / Math.pow(10, token.decimals)).toString());
@@ -147,17 +202,16 @@ export const SendPage = () => {
   };
 
   return (
-    <div className="container cyberpunk min-h-screen p-8 bg-sol-background">
-      <h1 className="cyberpunk text-sol-green text-4xl mb-8">Send SOL</h1>
+    <div className="container cyberpunk min-h-screen p-4 bg-sol-background">
       
-      <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6 bg-sol-card p-8 rounded-lg">
         <div>
           <label className="block text-sol-green mb-2">
             Recipient Address
           </label>
           <input
             type="text"
-            className="cyberpunk w-full"
+            className="cyberpunk w-full text-sm text-[color:var(--sol-text)]"
             placeholder="Enter Solana address"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
@@ -169,18 +223,27 @@ export const SendPage = () => {
           <TokenSelector
             value={token || undefined}
             onSelect={(selectedToken) => {
-              const withBalance = walletTokens.find(t => t.address === selectedToken.address);
-              if (withBalance) {
-                setToken(withBalance);
-              }
+              console.log('Send page - onSelect called with:', selectedToken);
+              if (selectedToken.address === 'native') {
+                setToken({
+                  ...selectedToken,
+                  mint: selectedToken.address,
+                  image: selectedToken.logoURI || null,
+                  balance: '0'  // Will be updated from wallet.lamports
+                } as TokenWithBalance);
+              } else {
+                const withBalance = walletTokens.find(t => t.address === selectedToken.address);
+                setToken({
+                  ...selectedToken,
+                  mint: selectedToken.address,
+                  image: selectedToken.logoURI || null,
+                  balance: withBalance?.balance || '0'
+                } as TokenWithBalance);
+              }            
             }}
             placeholder="Select token to send..."
           />
-          {token?.balance && (
-            <div className="text-sm text-[color:var(--sol-green)] mt-1">
-              Balance: {(Number(token.balance) / Math.pow(10, token.decimals)).toFixed(4)}
-            </div>
-          )}
+          {getBalanceDisplay()}
         </div>
 
         <div>
@@ -218,7 +281,7 @@ export const SendPage = () => {
           className="cyberpunk w-full"
           disabled={loading || !recipient || !amount}
         >
-          {loading ? 'Sending...' : 'Send SOL'}
+          {loading ? 'Sending...' : 'Send'}
         </button>
       </form>
 
