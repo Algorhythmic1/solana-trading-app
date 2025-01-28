@@ -81,37 +81,36 @@ export const TransactionConfirmation = ({
 
   if (!transaction) return null;
 
-  const getTransactionAmount = (transaction: VersionedTransaction): number => {
-    try {
-      const instruction = transaction.message.staticAccountKeys[1];
-      return instruction ? Number(instruction) : 0;
-    } catch (error) {
-      console.error('Error getting transaction amount:', error);
-      return 0;
-    }
-  };
 
   const afterBalance = currentBalance !== null && estimatedFee !== null
-    ? currentBalance - getTransactionAmount(transaction) - estimatedFee
+    ? currentBalance - (
+        // Only subtract SOL amount if it's a native SOL transfer
+        expectedChanges.sol < 0 ? Math.abs(expectedChanges.sol) : 0
+      ) - estimatedFee
     : null;
 
   const hasInsufficientFunds = afterBalance !== null && afterBalance < 0;
 
   const renderChanges = () => (
     <div className="space-y-2">
-      {expectedChanges?.sol !== 0 && (
-        <div className="flex justify-between">
-          <span>SOL Balance Change</span>
-          <span className={expectedChanges?.sol > 0 ? 'text-green-500' : 'text-red-500'}>
-            {expectedChanges?.sol > 0 ? '+' : ''}{expectedChanges?.sol} SOL
-          </span>
-        </div>
-      )}
-      {expectedChanges?.tokens?.map(token => (
+      {/* Always show SOL changes (either transfer amount or network fee) */}
+      <div className="flex justify-between">
+        <span>SOL Balance Change</span>
+        <span className="text-red-500">
+          {expectedChanges.sol < 0 
+            ? expectedChanges.sol  // For native SOL transfers
+            : estimatedFee ? `-${estimatedFee.toFixed(6)}` // For token transfers, just show fee
+            : '0'
+          } SOL
+        </span>
+      </div>
+      
+      {/* Show token changes for token transfers */}
+      {(expectedChanges.tokens || []).map(token => (
         <div key={token.mint} className="flex justify-between">
           <span>{token.symbol} Balance Change</span>
-          <span className={token.amount > 0 ? 'text-green-500' : 'text-red-500'}>
-            {token.amount > 0 ? '+' : ''}{token.amount} {token.symbol}
+          <span className="text-red-500">
+            {token.amount.toFixed(token.decimals)} {token.symbol}
           </span>
         </div>
       ))}
@@ -186,9 +185,9 @@ export const TransactionConfirmation = ({
             <button
               onClick={onConfirm}
               className="cyberpunk modal-btn flex-1"
-              disabled={loading || hasInsufficientFunds}
+              disabled={Boolean(loading || hasInsufficientFunds || error)}
             >
-              Confirm
+              {loading ? 'Loading...' : hasInsufficientFunds ? 'Insufficient Balance' : 'Confirm'}
             </button>
           </div>
         </div>

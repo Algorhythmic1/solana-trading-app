@@ -12,6 +12,7 @@ import { TransactionConfirmation } from '../../components/modals/TransactionConf
 import { TokenSelector } from '../../components/TokenSelector';
 import { TokenWithBalance, ContextType } from '../../types';
 import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
+import { hasEnoughBalance } from '../../utils/hasSufficientBalance';
 
 
 export const SendPage = () => {
@@ -20,11 +21,6 @@ export const SendPage = () => {
   if (!wallet) {
     return <Navigate to="/dashboard" replace />;
   }
-
-  useEffect(() => {
-    console.log('Wallet context changed:', wallet);
-    console.log('Selected network changed:', selectedNetwork);
-  }, [wallet, selectedNetwork]);
 
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
@@ -35,6 +31,7 @@ export const SendPage = () => {
   const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingTx, setPendingTx] = useState<VersionedTransaction | null>(null);
+  const [estimatedFee, setEstimatedFee] = useState<number | null>(null);
 
   const validateAddress = (address: string): boolean => {
     try {
@@ -44,6 +41,69 @@ export const SendPage = () => {
       return false;
     }
   };
+
+  const handleFetchTokens = async () => {
+    if (!wallet) return;
+    
+    try {
+      console.log('Fetching token balances...');
+      const tokens = await fetchTokenBalances({
+        wallet,
+        selectedNetwork,
+        setBalance: setNativeSolBalance,
+        setLoading
+      });
+      console.log('Fetched tokens:', tokens);
+      setWalletTokens(tokens);
+    } catch (error) {
+      console.error('Failed to fetch token balances:', error);
+      setWalletTokens([]);
+    }
+  };
+
+  useEffect(() => {
+    const estimateFee = async () => {
+      if (!wallet || !recipient || !amount || !token) {
+        setEstimatedFee(null);
+        return;
+      }
+
+      try {
+        const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
+        // Create a dummy transaction to estimate fees
+        const recipientPubKey = new PublicKey(recipient);
+        const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
+        
+        const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+        const message = token.address === 'native'
+          ? new TransactionMessage({
+              payerKey: wallet.publicKey,
+              recentBlockhash: latestBlockhash.blockhash,
+              instructions: [
+                SystemProgram.transfer({
+                  fromPubkey: wallet.publicKey,
+                  toPubkey: recipientPubKey,
+                  lamports,
+                })
+              ],
+            }).compileToV0Message()
+          : // Add token transfer message compilation here
+            null;
+
+        if (message) {
+          const { value: fee } = await connection.getFeeForMessage(message, 'confirmed');
+          if (fee !== null) {
+            setEstimatedFee(fee / LAMPORTS_PER_SOL);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to estimate fee:', error);
+        setEstimatedFee(null);
+      }
+    };
+
+    estimateFee();
+  }, [wallet, recipient, amount, token, selectedNetwork]);
 
   useEffect(() => {
     const handleFetchTokens = async () => {
@@ -68,10 +128,9 @@ export const SendPage = () => {
     handleFetchTokens();
   }, [wallet, selectedNetwork]);
 
-  // See walletTokens when it changes
   useEffect(() => {
-    console.log('walletTokens updated:', walletTokens);
-  }, [walletTokens]);
+    handleFetchTokens();
+  }, [wallet, selectedNetwork]);
 
   const handleSubmit = async (e: React.FormEvent) => {
 
@@ -138,7 +197,7 @@ export const SendPage = () => {
   const handleConfirmTransaction = async () => {
     if (!pendingTx) return;
     setLoading(true);
-
+  
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
     try {
@@ -149,7 +208,7 @@ export const SendPage = () => {
         preflightCommitment: 'confirmed',
         maxRetries: 3
       });
-
+  
       // Confirm transaction
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
       await connection.confirmTransaction({
@@ -157,9 +216,12 @@ export const SendPage = () => {
         blockhash: latestBlockhash.blockhash,
         lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
       });
-
+  
       console.log('Transaction confirmed:', signature);
-
+  
+      // Refresh balances after successful transaction
+      await handleFetchTokens();
+  
       // Clear form on success
       setRecipient('');
       setAmount('');
@@ -286,7 +348,19 @@ export const SendPage = () => {
         <button
           type="submit"
           className="cyberpunk w-full"
-          disabled={loading || !recipient || !amount}
+          disabled={
+            loading || 
+            !recipient || 
+            !amount || 
+            !token || 
+            !hasEnoughBalance({
+              token, 
+              amount, 
+              nativeSolBalance, 
+              estimatedFee: estimatedFee || 0
+            }
+            )
+          }
         >
           {loading ? 'Sending...' : 'Send'}
         </button>
@@ -301,8 +375,15 @@ export const SendPage = () => {
           }}
           onConfirm={handleConfirmTransaction}
           expectedChanges={{
-            sol: -amount,
-            tokens: []
+            sol: token?.address === 'native' ? -Number(amount) : 0,
+            tokens: token?.address === 'native' ? [] : [
+              {
+                mint: token?.address || '',
+                symbol: token?.symbol || '',
+                amount: -Number(amount),
+                decimals: token?.decimals || 0
+              }
+            ]
           }}
           connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
         />
