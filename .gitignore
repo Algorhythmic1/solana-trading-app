@@ -31,3 +31,4 @@ dist-ssr
 
 # App database
 src-tauri/tokens.db
+test-ledger/
