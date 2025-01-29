@@ -6,15 +6,27 @@ import {
   LAMPORTS_PER_SOL,
   Connection,
   VersionedTransaction,
-  TransactionMessage
+  TransactionMessage,
+  SendTransactionError
 } from '@solana/web3.js';
 import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
 import { TokenSelector } from '../../components/TokenSelector';
 import { TokenWithBalance, ContextType } from '../../types';
 import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
 import { hasEnoughBalance } from '../../utils/hasSufficientBalance';
-import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { 
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction, 
+  getAssociatedTokenAddressSync 
+} from '@solana/spl-token';
+import { TransactionResult } from '../../components/modals/TransactionResult';
 
+interface TransactionResult {
+  signature: string;
+  success: boolean;
+  error?: string;
+  network: string;
+}
 
 export const SendPage = () => {
   const { wallet, selectedNetwork, } = useOutletContext<ContextType>();
@@ -33,6 +45,7 @@ export const SendPage = () => {
   const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingTx, setPendingTx] = useState<VersionedTransaction | null>(null);
+  const [transactionResult, setTransactionResult] = useState<TransactionResult | null>(null);
 
   const validateAddress = (address: string): boolean => {
     try {
@@ -89,7 +102,7 @@ export const SendPage = () => {
     handleFetchTokens();
   }, [wallet, selectedNetwork]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleValidateAndConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -108,9 +121,8 @@ export const SendPage = () => {
     try {
       const recipientPubKey = new PublicKey(recipient);
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-
+      
       if (token.address === 'native') {
-
         const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
 
         const transaction = new VersionedTransaction(
@@ -195,38 +207,131 @@ export const SendPage = () => {
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
     try {
-      // Sign and send the versioned transaction
-      pendingTx.sign([wallet]);
-      const signature = await connection.sendTransaction(pendingTx, {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed',
-        maxRetries: 3
+      // Log the original transaction details
+      console.log('Original transaction:', {
+        instructions: pendingTx.message.compiledInstructions,
+        accounts: pendingTx.message.staticAccountKeys.map(key => key.toString())
       });
   
-      // Confirm transaction
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-      await connection.confirmTransaction({
-        signature,
-        blockhash: latestBlockhash.blockhash,
-        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+      console.log('New blockhash:', latestBlockhash.blockhash);
+      
+      const messageV0 = pendingTx.message;
+      const newMessage = new TransactionMessage({
+        payerKey: wallet.publicKey,
+        recentBlockhash: latestBlockhash.blockhash,
+        instructions: messageV0.compiledInstructions.map(ix => ({
+          programId: messageV0.staticAccountKeys[ix.programIdIndex],
+          accounts: ix.accountKeyIndexes.map(idx => messageV0.staticAccountKeys[idx]),
+          data: Buffer.from(ix.data),
+          keys: ix.accountKeyIndexes.map(idx => ({
+            pubkey: messageV0.staticAccountKeys[idx],
+            isSigner: messageV0.isAccountSigner(idx),
+            isWritable: messageV0.isAccountWritable(idx)
+          }))
+        }))
+      }).compileToV0Message();
+  
+      // Log the new message details
+      console.log('New message:', {
+        instructions: newMessage.compiledInstructions,
+        accounts: newMessage.staticAccountKeys.map(key => key.toString())
       });
   
-      console.log('Transaction confirmed:', signature);
-  
-      // Refresh balances after successful transaction
-      await handleFetchTokens();
-  
-      // Clear form on success
-      setRecipient('');
-      setAmount('');
-      setShowConfirmation(false);
-      setPendingTx(null);
+      const newTransaction = new VersionedTransaction(newMessage);
       
+      // Sign and verify signature
+      newTransaction.sign([wallet]);
+      console.log('Transaction signed. Signatures:', newTransaction.signatures);
+  
+      try {
+        // Try to simulate before sending
+        const simulation = await connection.simulateTransaction(newTransaction);
+        console.log('Simulation result:', simulation);
+  
+        if (simulation.value.err) {
+          throw new Error(`Simulation failed: ${JSON.stringify(simulation.value.err)}`);
+        }
+  
+        const signature = await connection.sendTransaction(newTransaction, {
+          skipPreflight: false,
+          preflightCommitment: 'confirmed',
+          maxRetries: 3
+        });
+
+        console.log('Transaction sent:', signature);
+  
+        // Confirm with retry logic
+        let confirmed = false;
+        let retries = 5;
+        
+        while (!confirmed && retries > 0) {
+          try {
+            const confirmation = await connection.confirmTransaction({
+              signature,
+              blockhash: latestBlockhash.blockhash,
+              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+            }, 'confirmed');
+
+            if (confirmation.value.err) {
+              throw new Error('Transaction failed: ' + confirmation.value.err.toString());
+            }
+
+            confirmed = true;
+            console.log('Transaction confirmed:', signature);
+            await handleFetchTokens();
+
+            setTransactionResult({
+              signature,
+              success: true,
+              network: selectedNetwork.name
+            });
+    
+            // Clear form on success
+            setRecipient('');
+            setAmount('');
+    
+          } catch (sendError) {
+            console.error('Send error type:', sendError instanceof SendTransactionError ? sendError.constructor.name : 'Unknown');
+            console.error('Send error full details:', sendError);
+      
+            if (sendError instanceof SendTransactionError) {
+              try {
+                const logs = await sendError.getLogs(connection);
+                console.error('Transaction simulation logs:', logs);
+                throw new Error(`Simulation failed: ${logs ? logs.join('\n') : sendError.message}`);
+              } catch (logError) {
+                console.error('Error getting logs:', logError);
+                throw sendError;
+              }
+            }
+            throw sendError;
+          }
+        }
+      
+      } catch (err) {
+        console.error('Transaction error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to send transaction';
+        setTransactionResult({
+          signature: '',
+          success: false,
+          error: errorMessage,
+          network: selectedNetwork.name
+        });
+      }
     } catch (err) {
       console.error('Transaction error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send transaction');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send transaction';
+      setTransactionResult({
+        signature: '',
+        success: false,
+        error: errorMessage,
+        network: selectedNetwork.name
+      });
     } finally {
       setSending(false);
+      setShowConfirmation(false);
+      setPendingTx(null);
     }
   };
 
@@ -267,7 +372,7 @@ export const SendPage = () => {
   return (
     <div className="container cyberpunk min-h-screen p-4 bg-sol-background">
       
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6 bg-sol-card p-8 rounded-lg">
+      <form onSubmit={handleValidateAndConfirm} className="max-w-2xl space-y-6 bg-sol-card p-8 rounded-lg">
         <div>
           <label className="block text-sol-green mb-2">
             Recipient Address
@@ -383,6 +488,16 @@ export const SendPage = () => {
             ]
           }}
           connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
+        />
+      )}
+
+      {transactionResult && (
+        <TransactionResult
+          signature={transactionResult.signature}
+          success={transactionResult.success}
+          error={transactionResult.error}
+          onClose={() => setTransactionResult(null)}
+          network={selectedNetwork.name}
         />
       )}
     </div>

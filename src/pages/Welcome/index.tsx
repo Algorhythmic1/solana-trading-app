@@ -28,17 +28,17 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
     navigate('/dashboard')
   }
 
-  useEffect(() => {
-    const loadStoredWallets = async () => {
-      try {
-        const wallets = await invoke<StoredWallet[]>('list_stored_wallets');
-        console.log('Loaded wallets:', wallets);
-        setStoredWallets(wallets);
-      } catch (error) {
-        console.error('Error loading stored wallets:', error);
-      }
-    };
+  const loadStoredWallets = async () => {
+    try {
+      const wallets = await invoke<StoredWallet[]>('list_stored_wallets');
+      console.log('Loaded wallets:', wallets);
+      setStoredWallets(wallets);
+    } catch (error) {
+      console.error('Error loading stored wallets:', error);
+    }
+  }
 
+  useEffect(() => {
     loadStoredWallets();
   }, []);
 
@@ -77,6 +77,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
       
       const importedWallet = Keypair.fromSecretKey(secretKey);
       await setWallet(importedWallet, true); // Save when importing new wallet
+      await loadStoredWallets();  // Refresh the list of stored wallets
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Invalid private key format';
       setError(`Failed to import wallet: ${errorMessage}`);
@@ -84,6 +85,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
       setLoading(false);
       setPrivateKey('');
     }
+    
   };
 
   const createWallet = async () => {

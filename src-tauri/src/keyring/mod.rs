@@ -117,6 +117,12 @@ pub async fn list_stored_wallets() -> Result<Vec<StoredWallet>, String> {
         match entry.get_password() {
             Ok(password) => {
                 //println!("Rust: Found password: {} with account: {} for service: {}", password, account, SERVICE_NAME);
+
+                if password.is_empty() {
+                    //println!("Rust: Password is empty for account: {}", account);
+                    break;
+                }
+
                 if let Ok(secret_key) = bs58::decode(&password).into_vec() {
                     if secret_key.len() == 64 {
                         
@@ -128,7 +134,7 @@ pub async fn list_stored_wallets() -> Result<Vec<StoredWallet>, String> {
                             public_key: bs58::encode(keypair.pubkey().to_bytes()).into_string(),
                             account: account.to_string(),
                         });
-                        //println!("Rust: Found wallet for account: {}", account);  
+                        println!("Rust: Found wallet for account: {}", account);  
                     }
                 }
                 index += 1;

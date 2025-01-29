@@ -10,20 +10,14 @@ export interface BalanceCheck {
 export function hasEnoughBalance({
   token, 
   amount, 
-  nativeSolBalance,
-  estimatedFee = 0
+  nativeSolBalance
 }: BalanceCheck): boolean {
   if (!token || !amount || Number(amount) <= 0) return false;
   
   if (token.address === 'native') {
     return nativeSolBalance !== null && 
            nativeSolBalance > 0 && 
-           (Number(amount) + estimatedFee) <= nativeSolBalance;
-  }
-  
-  // For token transfers, we still need enough SOL to pay the network fee
-  if (estimatedFee > 0 && (nativeSolBalance === null || nativeSolBalance < estimatedFee)) {
-    return false;
+           Number(amount) <= nativeSolBalance;
   }
   
   return Number(token.balance) > 0 && 
