@@ -39,7 +39,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
   }
 
   useEffect(() => {
-    loadStoredWallets();
+    loadStoredWallets();  // Initial load
   }, []);
 
   const loadSelectedWallet = async (publicKey: string, account: string) => {

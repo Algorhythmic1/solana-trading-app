@@ -7,7 +7,8 @@ import {
   Connection,
   VersionedTransaction,
   TransactionMessage,
-  SendTransactionError
+  SendTransactionError,
+  ComputeBudgetProgram
 } from '@solana/web3.js';
 import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
 import { TokenSelector } from '../../components/TokenSelector';
@@ -163,6 +164,10 @@ export const SendPage = () => {
         // Build instructions array
         const instructions = [];
 
+        const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 10000,
+        });
+
         // Add ATA creation instruction if recipient account doesn't exist
         if (!recipientAccountInfo) {
           instructions.push(
@@ -182,6 +187,8 @@ export const SendPage = () => {
             tokenAmount         // amount
           )
         );
+
+        instructions.push(addPriorityFee);
 
         const transaction = new VersionedTransaction(
           new TransactionMessage({
@@ -207,15 +214,17 @@ export const SendPage = () => {
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
     try {
-      // Log the original transaction details
+      // Log original transaction for debugging
       console.log('Original transaction:', {
         instructions: pendingTx.message.compiledInstructions,
         accounts: pendingTx.message.staticAccountKeys.map(key => key.toString())
       });
   
+      // Get fresh blockhash immediately before sending
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
       console.log('New blockhash:', latestBlockhash.blockhash);
       
+      // Update transaction with fresh blockhash
       const messageV0 = pendingTx.message;
       const newMessage = new TransactionMessage({
         payerKey: wallet.publicKey,
@@ -232,95 +241,72 @@ export const SendPage = () => {
         }))
       }).compileToV0Message();
   
-      // Log the new message details
+      // Log new message for debugging
       console.log('New message:', {
         instructions: newMessage.compiledInstructions,
         accounts: newMessage.staticAccountKeys.map(key => key.toString())
       });
   
       const newTransaction = new VersionedTransaction(newMessage);
-      
-      // Sign and verify signature
       newTransaction.sign([wallet]);
       console.log('Transaction signed. Signatures:', newTransaction.signatures);
   
-      try {
-        // Try to simulate before sending
-        const simulation = await connection.simulateTransaction(newTransaction);
-        console.log('Simulation result:', simulation);
+      // Simulate before sending
+      const simulation = await connection.simulateTransaction(newTransaction);
+      console.log('Simulation result:', simulation);
   
-        if (simulation.value.err) {
-          throw new Error(`Simulation failed: ${JSON.stringify(simulation.value.err)}`);
-        }
-  
-        const signature = await connection.sendTransaction(newTransaction, {
-          skipPreflight: false,
-          preflightCommitment: 'confirmed',
-          maxRetries: 3
-        });
-
-        console.log('Transaction sent:', signature);
-  
-        // Confirm with retry logic
-        let confirmed = false;
-        let retries = 5;
-        
-        while (!confirmed && retries > 0) {
-          try {
-            const confirmation = await connection.confirmTransaction({
-              signature,
-              blockhash: latestBlockhash.blockhash,
-              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-            }, 'confirmed');
-
-            if (confirmation.value.err) {
-              throw new Error('Transaction failed: ' + confirmation.value.err.toString());
-            }
-
-            confirmed = true;
-            console.log('Transaction confirmed:', signature);
-            await handleFetchTokens();
-
-            setTransactionResult({
-              signature,
-              success: true,
-              network: selectedNetwork.name
-            });
-    
-            // Clear form on success
-            setRecipient('');
-            setAmount('');
-    
-          } catch (sendError) {
-            console.error('Send error type:', sendError instanceof SendTransactionError ? sendError.constructor.name : 'Unknown');
-            console.error('Send error full details:', sendError);
-      
-            if (sendError instanceof SendTransactionError) {
-              try {
-                const logs = await sendError.getLogs(connection);
-                console.error('Transaction simulation logs:', logs);
-                throw new Error(`Simulation failed: ${logs ? logs.join('\n') : sendError.message}`);
-              } catch (logError) {
-                console.error('Error getting logs:', logError);
-                throw sendError;
-              }
-            }
-            throw sendError;
-          }
-        }
-      
-      } catch (err) {
-        console.error('Transaction error:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to send transaction';
-        setTransactionResult({
-          signature: '',
-          success: false,
-          error: errorMessage,
-          network: selectedNetwork.name
-        });
+      if (simulation.value.err) {
+        throw new Error(`Simulation failed: ${JSON.stringify(simulation.value.err)}`);
       }
+  
+      // Send immediately after successful simulation
+      const signature = await connection.sendTransaction(newTransaction, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 3
+      });
+  
+      console.log('Transaction sent:', signature);
+  
+      // Wait for confirmation with the same blockhash
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+      }, 'confirmed');
+  
+      if (confirmation.value.err) {
+        throw new Error('Transaction failed: ' + confirmation.value.err.toString());
+      }
+  
+      console.log('Transaction confirmed:', signature);
+      await handleFetchTokens();
+  
+      setTransactionResult({
+        signature,
+        success: true,
+        network: selectedNetwork.name
+      });
+  
+      // Clear form on success
+      setRecipient('');
+      setAmount('');
+  
     } catch (err) {
-      console.error('Transaction error:', err);
+      console.error('Send error type:', err instanceof Error ? err.constructor.name : 'Unknown');
+      console.error('Send error full details:', err);
+  
+      if (err instanceof SendTransactionError) {
+        try {
+          const logs = await err.getLogs(connection);
+          console.error('Transaction simulation logs:', logs);
+          throw new Error(`Simulation failed: ${logs ? logs.join('\n') : err.message}`);
+        } catch (logError) {
+          console.error('Error getting logs:', logError);
+          throw err;
+        }
+      }
+  
       const errorMessage = err instanceof Error ? err.message : 'Failed to send transaction';
       setTransactionResult({
         signature: '',
@@ -328,6 +314,7 @@ export const SendPage = () => {
         error: errorMessage,
         network: selectedNetwork.name
       });
+  
     } finally {
       setSending(false);
       setShowConfirmation(false);
