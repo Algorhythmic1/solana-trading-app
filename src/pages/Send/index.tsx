@@ -13,6 +13,7 @@ import { TokenSelector } from '../../components/TokenSelector';
 import { TokenWithBalance, ContextType } from '../../types';
 import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
 import { hasEnoughBalance } from '../../utils/hasSufficientBalance';
+import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAssociatedTokenAddressSync } from '@solana/spl-token';
 
 
 export const SendPage = () => {
@@ -28,12 +29,10 @@ export const SendPage = () => {
   const [amount, setAmount] = useState('');
   const [token, setToken] = useState<TokenWithBalance | null>(null);
   const [walletTokens, setWalletTokens] = useState<TokenWithBalance[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingTx, setPendingTx] = useState<VersionedTransaction | null>(null);
-  const [estimatedFee, setEstimatedFee] = useState<number | null>(null);
 
   const validateAddress = (address: string): boolean => {
     try {
@@ -64,50 +63,6 @@ export const SendPage = () => {
   };
 
   useEffect(() => {
-    const estimateFee = async () => {
-      if (!wallet || !recipient || !amount || !token) {
-        setEstimatedFee(null);
-        return;
-      }
-
-      try {
-        const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
-        // Create a dummy transaction to estimate fees
-        const recipientPubKey = new PublicKey(recipient);
-        const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
-        
-        const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-        const message = token.address === 'native'
-          ? new TransactionMessage({
-              payerKey: wallet.publicKey,
-              recentBlockhash: latestBlockhash.blockhash,
-              instructions: [
-                SystemProgram.transfer({
-                  fromPubkey: wallet.publicKey,
-                  toPubkey: recipientPubKey,
-                  lamports,
-                })
-              ],
-            }).compileToV0Message()
-          : // Add token transfer message compilation here
-            null;
-
-        if (message) {
-          const { value: fee } = await connection.getFeeForMessage(message, 'confirmed');
-          if (fee !== null) {
-            setEstimatedFee(fee / LAMPORTS_PER_SOL);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to estimate fee:', error);
-        setEstimatedFee(null);
-      }
-    };
-
-    estimateFee();
-  }, [wallet, recipient, amount, token, selectedNetwork]);
-
-  useEffect(() => {
     const handleFetchTokens = async () => {
       if (!wallet) return;
       
@@ -135,10 +90,10 @@ export const SendPage = () => {
   }, [wallet, selectedNetwork]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-
-    const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     e.preventDefault();
     setError(null);
+
+    const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
 
     if (!validateAddress(recipient)) {
       setError('Invalid recipient address');
@@ -152,11 +107,12 @@ export const SendPage = () => {
 
     try {
       const recipientPubKey = new PublicKey(recipient);
-      const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
-      
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
 
       if (token.address === 'native') {
+
+        const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
+
         const transaction = new VersionedTransaction(
           new TransactionMessage({
             payerKey: wallet.publicKey,
@@ -165,7 +121,7 @@ export const SendPage = () => {
               SystemProgram.transfer({
                 fromPubkey: wallet.publicKey,
                 toPubkey: recipientPubKey,
-                lamports,
+                lamports: lamports,
               })
             ],
           }).compileToV0Message()
@@ -174,17 +130,52 @@ export const SendPage = () => {
         setPendingTx(transaction);
         setShowConfirmation(true);
       } else {
+        // SPL Token Transfer
+        const mintPubkey = new PublicKey(token.mint);
+        const fromTokenAccount = await getAssociatedTokenAddressSync(
+          mintPubkey,
+          wallet.publicKey,
+        );
+
+        const toTokenAccount = await getAssociatedTokenAddressSync(
+          mintPubkey,
+          recipientPubKey,
+        );
+
+        // Check if recipient token account exists
+        const recipientAccountInfo = await connection.getAccountInfo(toTokenAccount);
+        
+        // Calculate token amount with decimals
+        const tokenAmount = Math.round(Number(amount) * Math.pow(10, token.decimals));
+
+        // Build instructions array
+        const instructions = [];
+
+        // Add ATA creation instruction if recipient account doesn't exist
+        if (!recipientAccountInfo) {
+          instructions.push(
+            createAssociatedTokenAccountInstruction(
+              wallet.publicKey, // payer
+              toTokenAccount,   // ata
+              recipientPubKey,  // owner
+              mintPubkey        // mint
+            )
+          );
+        }
+        instructions.push(
+          createTransferInstruction(
+            fromTokenAccount,    // source
+            toTokenAccount,      // destination
+            wallet.publicKey,    // owner
+            tokenAmount         // amount
+          )
+        );
+
         const transaction = new VersionedTransaction(
           new TransactionMessage({
             payerKey: wallet.publicKey,
-          recentBlockhash: latestBlockhash.blockhash,
-          instructions: [
-            SystemProgram.transfer({
-                fromPubkey: wallet.publicKey,
-                toPubkey: recipientPubKey,
-                lamports,
-              })
-            ],
+            recentBlockhash: latestBlockhash.blockhash,
+            instructions
           }).compileToV0Message()
         );
 
@@ -192,7 +183,8 @@ export const SendPage = () => {
         setShowConfirmation(true);
       }
     } catch (err) {
-      setError('Invalid recipient address');
+      console.error('Error creating token transfer:', err);
+      setError('Failed to create token transfer');
     }
   };
 
@@ -286,7 +278,7 @@ export const SendPage = () => {
             placeholder="Enter Solana address"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
-            disabled={loading}
+            disabled={pageLoading}
           />
         </div>
 
@@ -329,7 +321,7 @@ export const SendPage = () => {
             placeholder="0.0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            disabled={loading}
+            disabled={pageLoading}
           />
           {token?.balance && (
             <button
@@ -351,15 +343,14 @@ export const SendPage = () => {
           type="submit"
           className="cyberpunk w-full"
           disabled={
-            loading || 
+            pageLoading || 
             !recipient || 
             !amount || 
             !token || 
             !hasEnoughBalance({
               token, 
               amount, 
-              nativeSolBalance, 
-              estimatedFee: estimatedFee || 0
+              nativeSolBalance
             }
             )
           }
@@ -380,12 +371,14 @@ export const SendPage = () => {
           onConfirm={handleConfirmTransaction}
           expectedChanges={{
             sol: token?.address === 'native' ? -Number(amount) : 0,
-            tokens: token?.address === 'native' ? [] : [
+            currentSolBalance: nativeSolBalance || 0,
+            tokens: token?.address === 'native' ? undefined : [
               {
                 mint: token?.address || '',
                 symbol: token?.symbol || '',
                 amount: -Number(amount),
-                decimals: token?.decimals || 0
+                decimals: token?.decimals || 0,
+                currentBalance: Number(token?.balance) / Math.pow(10, token?.decimals || 0)
               }
             ]
           }}

@@ -30,6 +30,7 @@ export const SwapPage = ({ wallet, selectedNetwork }: SwapPageProps) => {
   const [isSwapping, setIsSwapping] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [transaction, setTransaction] = useState<VersionedTransaction | null>(null);
+  const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
 
   const slippagePresets = [0.1, 0.3, 1.0];
 
@@ -115,6 +116,23 @@ export const SwapPage = ({ wallet, selectedNetwork }: SwapPageProps) => {
     handleFetchTokens();
     const intervalId = setInterval(handleFetchTokens, 30000);
     return () => clearInterval(intervalId);
+  }, [wallet, selectedNetwork]);
+
+  useEffect(() => {
+    const fetchBalances = async () => {
+      if (!wallet) return;
+      try {
+        await fetchTokenBalances({
+          wallet,
+          selectedNetwork,
+          setBalance: setNativeSolBalance,
+          setLoading
+        });
+      } catch (error) {
+        console.error('Failed to fetch balances:', error);
+      }
+    };
+    fetchBalances();
   }, [wallet, selectedNetwork]);
 
   const handleMaxAmount = () => {
@@ -353,7 +371,7 @@ export const SwapPage = ({ wallet, selectedNetwork }: SwapPageProps) => {
             </div>
           )}
 
-          {showConfirmation && transaction && fromToken && toToken && (
+          {showConfirmation && transaction && fromToken && toToken && quote && (
             <TransactionConfirmation
               transaction={transaction}
               onClose={() => {
@@ -363,18 +381,21 @@ export const SwapPage = ({ wallet, selectedNetwork }: SwapPageProps) => {
               onConfirm={handleConfirmSwap}
               expectedChanges={{
                 sol: 0,
+                currentSolBalance: nativeSolBalance || 0,
                 tokens: [
                   {
                     mint: fromToken.address,
                     symbol: fromToken.symbol,
                     amount: -Number(fromAmount),
-                    decimals: fromToken.decimals
+                    decimals: fromToken.decimals,
+                    currentBalance: Number(fromToken.balance) / Math.pow(10, fromToken.decimals)
                   },
                   {
                     mint: toToken.address,
                     symbol: toToken.symbol,
-                    amount: Number(toAmount),
-                    decimals: toToken.decimals
+                    amount: Number(quote.outAmount) / Math.pow(10, toToken.decimals),
+                    decimals: toToken.decimals,
+                    currentBalance: Number(toToken.balance) / Math.pow(10, toToken.decimals)
                   }
                 ]
               }}

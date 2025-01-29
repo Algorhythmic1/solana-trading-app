@@ -15,11 +15,13 @@ interface TransactionConfirmationProps {
 
 interface ExpectedChanges {
   sol: number;
+  currentSolBalance: number;
   tokens?: Array<{
     mint: string;
     symbol: string;
     amount: number;
     decimals: number;
+    currentBalance: number;
   }>;
 }
 
@@ -27,95 +29,56 @@ export const TransactionConfirmation = ({
   transaction,
   onClose,
   onConfirm,
-  expectedChanges = { sol: 0 },
+  expectedChanges = { sol: 0, currentSolBalance: 0 },
   connection
 }: TransactionConfirmationProps) => {
-  const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [estimatedFee, setEstimatedFee] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const estimateFee = async () => {
       if (!transaction) return;
       
       setLoading(true);
       setError(null);
       
       try {
-        console.log('Transaction:', {
-          accounts: transaction.message.staticAccountKeys,
-          instructions: transaction.message.compiledInstructions
-        });
-
-        // Get current balance
-        const payer = transaction.message.staticAccountKeys[0];
-        console.log('Fetching balance for:', payer.toString());
-        const balance = await connection.getBalance(payer);
-        setCurrentBalance(balance / LAMPORTS_PER_SOL);
-
-        // Get fee estimate
-        console.log('Getting fee estimate');
-        const { value: estimatedFee } = await connection.getFeeForMessage(
+        const { value: fee } = await connection.getFeeForMessage(
           transaction.message,
           'confirmed'
         );
         
-        console.log('Fee estimate:', estimatedFee);
-        if (estimatedFee === null) {
+        if (fee === null) {
           throw new Error('Failed to get fee estimate');
         }
 
-        setEstimatedFee(estimatedFee / LAMPORTS_PER_SOL);
-
+        setEstimatedFee(fee / LAMPORTS_PER_SOL);
       } catch (err) {
-        console.error('Error fetching transaction details:', err);
-        setError('Failed to fetch transaction details');
+        console.error('Error estimating fee:', err);
+        setError('Failed to estimate transaction fee');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    estimateFee();
   }, [transaction, connection]);
 
-  if (!transaction) return null;
-
-
-  const afterBalance = currentBalance !== null && estimatedFee !== null
-    ? currentBalance - (
-        // Only subtract SOL amount if it's a native SOL transfer
-        expectedChanges.sol < 0 ? Math.abs(expectedChanges.sol) : 0
-      ) - estimatedFee
+  const afterSolBalance = estimatedFee !== null
+    ? expectedChanges.currentSolBalance - 
+      (expectedChanges.sol < 0 ? Math.abs(expectedChanges.sol) : 0) - 
+      estimatedFee
     : null;
 
-  const hasInsufficientFunds = afterBalance !== null && afterBalance < 0;
+  const afterTokenBalance = expectedChanges.tokens?.[0]
+    ? expectedChanges.tokens[0].currentBalance + expectedChanges.tokens[0].amount
+    : null;
 
-  const renderChanges = () => (
-    <div className="space-y-2">
-      {/* Always show SOL changes (either transfer amount or network fee) */}
-      <div className="flex justify-between">
-        <span>SOL Balance Change</span>
-        <span className="text-red-500">
-          {expectedChanges.sol < 0 
-            ? expectedChanges.sol  // For native SOL transfers
-            : estimatedFee ? `-${estimatedFee.toFixed(6)}` // For token transfers, just show fee
-            : '0'
-          } SOL
-        </span>
-      </div>
-      
-      {/* Show token changes for token transfers */}
-      {(expectedChanges.tokens || []).map(token => (
-        <div key={token.mint} className="flex justify-between">
-          <span>{token.symbol} Balance Change</span>
-          <span className="text-red-500">
-            {token.amount.toFixed(token.decimals)} {token.symbol}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
+  const hasInsufficientFunds = afterSolBalance !== null && afterSolBalance < 0;
+  const hasInsufficientTokens = afterTokenBalance !== null && afterTokenBalance < 0;
+
+  if (!transaction) return null;
 
   return (
     <div className="card cyberpunk w-full">
@@ -129,6 +92,7 @@ export const TransactionConfirmation = ({
         <div className="text-sol-error py-4">{error}</div>
       ) : (
         <div className="space-y-4">
+          {/* Transaction Details */}
           <div className="border border-sol-green/20 rounded p-4 space-y-2">
             <div className="flex justify-between">
               <span className="text-sol-text">From</span>
@@ -142,39 +106,70 @@ export const TransactionConfirmation = ({
                 {transaction.message.staticAccountKeys[1].toString()}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sol-text">Amount</span>
-              <span className="text-sol-green">{expectedChanges.sol} SOL</span>
-            </div>
+            
+            {/* Show amount based on token type */}
+            {expectedChanges.tokens ? (
+              <div className="flex justify-between">
+                <span className="text-sol-text">Amount</span>
+                <span className="text-sol-green">
+                  {Math.abs(expectedChanges.tokens[0].amount)} {expectedChanges.tokens[0].symbol}
+                </span>
+              </div>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-sol-text">Amount</span>
+                <span className="text-sol-green">{Math.abs(expectedChanges.sol)} SOL</span>
+              </div>
+            )}
+            
             <div className="flex justify-between">
               <span className="text-sol-text">Network Fee</span>
               <span className="text-sol-green">≈ {estimatedFee?.toFixed(6)} SOL</span>
             </div>
           </div>
-
-          <div className="border border-sol-green/20 rounded p-4">
-            {renderChanges()}
-          </div>
-
+  
+          {/* Balance Changes */}
           <div className="border border-sol-green/20 rounded p-4 space-y-2">
+            {/* SOL Balance (always show) */}
             <div className="flex justify-between">
-              <span className="text-sol-text">Current Balance</span>
-              <span className="text-sol-green">{currentBalance?.toFixed(6)} SOL</span>
+              <span className="text-sol-text">Current SOL Balance</span>
+              <span className="text-sol-green">{expectedChanges.currentSolBalance.toFixed(6)} SOL</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sol-text">Balance After</span>
+              <span className="text-sol-text">SOL Balance After</span>
               <span className={`${hasInsufficientFunds ? 'text-sol-error' : 'text-sol-green'}`}>
-                {afterBalance?.toFixed(6)} SOL
+                {afterSolBalance?.toFixed(6)} SOL
               </span>
             </div>
+  
+            {/* Token Balance (show only for token transfers) */}
+            {expectedChanges.tokens?.[0] && (
+              <>
+                <div className="border-t border-sol-green/20 my-2" />
+                <div className="flex justify-between">
+                  <span className="text-sol-text">Current {expectedChanges.tokens[0].symbol} Balance</span>
+                  <span className="text-sol-green">
+                    {expectedChanges.tokens[0].currentBalance.toFixed(expectedChanges.tokens[0].decimals)} {expectedChanges.tokens[0].symbol}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sol-text">{expectedChanges.tokens[0].symbol} Balance After</span>
+                  <span className={`${hasInsufficientTokens ? 'text-sol-error' : 'text-sol-green'}`}>
+                    {afterTokenBalance?.toFixed(expectedChanges.tokens[0].decimals)} {expectedChanges.tokens[0].symbol}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
-
-          {hasInsufficientFunds && (
+  
+          {/* Error Messages */}
+          {(hasInsufficientFunds || hasInsufficientTokens) && (
             <div className="text-sol-error text-sm">
-              Insufficient funds for this transaction
+              Insufficient {hasInsufficientFunds ? 'SOL' : expectedChanges.tokens?.[0].symbol} for this transaction
             </div>
           )}
-
+  
+          {/* Action Buttons */}
           <div className="flex gap-2 mt-6">
             <button
               onClick={onClose}
@@ -185,9 +180,12 @@ export const TransactionConfirmation = ({
             <button
               onClick={onConfirm}
               className="cyberpunk modal-btn flex-1"
-              disabled={Boolean(loading || hasInsufficientFunds || error)}
+              disabled={Boolean(loading || hasInsufficientFunds || hasInsufficientTokens || error)}
             >
-              {loading ? 'Loading...' : hasInsufficientFunds ? 'Insufficient Balance' : 'Confirm'}
+              {loading ? 'Loading...' : 
+               hasInsufficientFunds ? 'Insufficient SOL' :
+               hasInsufficientTokens ? `Insufficient ${expectedChanges.tokens?.[0].symbol}` :
+               'Confirm'}
             </button>
           </div>
         </div>
