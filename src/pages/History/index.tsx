@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import { 
-  Connection, 
-  Keypair, 
+  Connection,  
   PublicKey, 
   LAMPORTS_PER_SOL,
   ParsedTransactionWithMeta,
   ConfirmedSignatureInfo 
 } from '@solana/web3.js';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useOutletContext } from 'react-router-dom';
 import { ExplorerLink } from '../../components/ExplorerLink';
+import { ContextType } from '../../types';
+import { invoke } from '@tauri-apps/api/core';
 
-interface HistoryPageProps {
-  wallet: Keypair | null;
-  connection: Connection;
+interface TokenInfo {
+  symbol: string;
+  decimals: number;
 }
+
+
 
 interface ParsedTransaction {
   signature: string;
@@ -22,11 +25,16 @@ interface ParsedTransaction {
   amount: number;
   type: 'sent' | 'received';
   otherParty: string;
+  token: string;
+  symbol?: string;
+  decimals?: number;
 }
 
-export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
+export const HistoryPage = () => {
+  const { wallet, selectedNetwork } = useOutletContext<ContextType>();
+
   if (!wallet) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
@@ -34,6 +42,8 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [lastSignature, setLastSignature] = useState<string | null>(null);
+
+  const connection = new Connection(selectedNetwork.endpoint, 'finalized');
 
   const fetchTransactions = async (before?: string) => {
     try {
@@ -78,33 +88,86 @@ export const HistoryPage = ({ wallet, connection }: HistoryPageProps) => {
     }
   };
 
-  const parseTx = (
+  const parseTx = async (
     tx: ParsedTransactionWithMeta | null,
     sigInfo: ConfirmedSignatureInfo,
     walletPubkey: PublicKey
-  ): ParsedTransaction | null => {
+  ): Promise<ParsedTransaction | null> => {
     if (!tx?.meta || !tx.blockTime) return null;
-
-    // Find the relevant transfer instruction
-    const transferInstruction = tx.transaction.message.instructions.find(
+  
+    // Check for native SOL transfer
+    const solTransfer = tx.transaction.message.instructions.find(
       (ix: any) => 'program' in ix && 'parsed' in ix && 
       ix.program === 'system' && ix.parsed?.type === 'transfer'
     );
-
-    if (!transferInstruction || !('parsed' in transferInstruction)) return null;
-
-    const { info } = transferInstruction.parsed;
-    const amount = info.lamports / LAMPORTS_PER_SOL;
-    const isSender = info.source === walletPubkey.toString();
-
-    return {
-      signature: sigInfo.signature,
-      timestamp: tx.blockTime * 1000, // Convert to milliseconds
-      status: tx.meta.err ? 'failed' : 'confirmed',
-      amount,
-      type: isSender ? 'sent' : 'received',
-      otherParty: isSender ? info.destination : info.source
-    };
+  
+    // Check for SPL token transfer
+    const tokenTransfer = tx.transaction.message.instructions.find(
+      (ix: any) => 'program' in ix && 'parsed' in ix && 
+      ix.program === 'spl-token' && ix.parsed?.type === 'transfer'
+    );
+  
+    if (solTransfer && 'parsed' in solTransfer) {
+      // Handle SOL transfer
+      const { info } = solTransfer.parsed;
+      const amount = info.lamports / LAMPORTS_PER_SOL;
+      const isSender = info.source === walletPubkey.toString();
+  
+      return {
+        signature: sigInfo.signature,
+        timestamp: tx.blockTime * 1000,
+        status: tx.meta.err ? 'failed' : 'confirmed',
+        amount,
+        type: isSender ? 'sent' : 'received',
+        otherParty: isSender ? info.destination : info.source,
+        token: 'SOL'
+      };
+    } 
+    
+    if (tokenTransfer && 'parsed' in tokenTransfer) {
+      // Handle SPL token transfer
+      const { info } = tokenTransfer.parsed;
+      const isSender = info.authority === walletPubkey.toString();
+      
+      // Find token account info from pre/post token balances
+      const relevantBalance = tx.meta.preTokenBalances?.find(
+        (b: any) => isSender ? 
+          b.accountIndex === tx.transaction.message.accountKeys.findIndex(
+            (key: any) => key.pubkey.toString() === info.source
+          ) :
+          b.accountIndex === tx.transaction.message.accountKeys.findIndex(
+            (key: any) => key.pubkey.toString() === info.destination
+          )
+      );
+  
+      if (!relevantBalance) return null;
+  
+      const amount = Number(info.amount) / Math.pow(10, relevantBalance.uiTokenAmount.decimals);
+      let symbol = '';
+      
+      try {
+        const tokenInfo = await invoke<TokenInfo>('get_token_info', { 
+          mint: relevantBalance.mint 
+        });
+        symbol = tokenInfo?.symbol || '';
+      } catch (error) {
+        console.error('Error fetching token info from database:', error);
+      }
+      
+      return {
+        signature: sigInfo.signature,
+        timestamp: tx.blockTime * 1000,
+        status: tx.meta.err ? 'failed' : 'confirmed',
+        amount,
+        type: isSender ? 'sent' : 'received',
+        otherParty: isSender ? info.destination : info.source,
+        token: relevantBalance.mint,
+        symbol,
+        decimals: relevantBalance.uiTokenAmount.decimals
+      };
+    }
+  
+    return null;
   };
 
   useEffect(() => {

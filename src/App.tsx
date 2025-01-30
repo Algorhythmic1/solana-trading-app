@@ -72,7 +72,7 @@ const createRouter = (
         },
         {
           path: 'history',
-          element: <HistoryPage wallet={wallet} connection={connection} />,
+          element: <HistoryPage />,
           errorElement: <ErrorBoundary />
         },
         {
