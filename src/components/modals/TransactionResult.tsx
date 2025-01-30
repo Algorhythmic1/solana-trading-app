@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 
 interface TransactionResultProps {
   signature: string;
@@ -16,14 +17,14 @@ export const TransactionResult: FC<TransactionResultProps> = ({
   network
 }) => {
   const getExplorerUrl = () => {
-    const baseUrl = 'https://solana.fm/tx/';
-    const networkParam = network === 'mainnet-beta' ? '' : `?cluster=${network}`;
+    const baseUrl = 'https://solscan.io/tx/';
+    const networkParam = `?cluster=${network}`;
     return `${baseUrl}${signature}${networkParam}`;
   };
 
   const openExplorer = async () => {
     try {
-      await window.open(getExplorerUrl(), '_blank');
+      await open(getExplorerUrl());
     } catch (err) {
       console.error('Failed to open explorer:', err);
     }
