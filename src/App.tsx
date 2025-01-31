@@ -63,11 +63,7 @@ const createRouter = (
         },
         {
           path: 'swap',
-          element: <SwapPage 
-            wallet={wallet} 
-            connection={connection}
-            selectedNetwork={selectedNetwork}
-          />,
+          element: <SwapPage />,
           errorElement: <ErrorBoundary />
         },
         {
@@ -77,12 +73,7 @@ const createRouter = (
         },
         {
           path: 'settings',
-          element: <SettingsPage 
-            wallet={wallet} 
-            connection={connection}
-            selectedNetwork={selectedNetwork}
-            setSelectedNetwork={setSelectedNetwork}
-          />,
+          element: <SettingsPage />,
           errorElement: <ErrorBoundary />
         }
       ],

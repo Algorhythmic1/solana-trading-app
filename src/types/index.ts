@@ -1,4 +1,4 @@
-import { Keypair, Connection, Cluster } from '@solana/web3.js';
+import { Keypair, Cluster } from '@solana/web3.js';
 
 export type Network = 'localnet' | 'devnet' | 'testnet' | 'mainnet-beta';
 
@@ -14,7 +14,6 @@ export type ContextType = {
   setWallet: (wallet: Keypair | null) => void;
   selectedNetwork: NetworkInfo;
   setSelectedNetwork: (network: NetworkInfo) => void;
-  connection: Connection;
 };
 
 export interface JupiterToken {

@@ -3,20 +3,18 @@ import { Navigate } from 'react-router-dom';
 import { ArrowDownUp } from 'lucide-react';
 import { TokenSelector } from '../../components/TokenSelector';
 import { getSwapQuote } from '../../utils/getSwapQuote';
-import type { TokenWithBalance, JupiterQuote, NetworkInfo } from '../../types';
-import { Keypair, Connection, VersionedTransaction } from '@solana/web3.js';
+import type { TokenWithBalance, JupiterQuote } from '../../types';
+import { Connection, VersionedTransaction } from '@solana/web3.js';
 import { QuoteDetails } from '../../components/QuoteDetails';
 import { executeSwap } from '../../utils/executeSwap';
 import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
 import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
+import { useOutletContext } from 'react-router-dom';
+import type { ContextType } from '../../types';
 
-export interface SwapPageProps {
-  wallet: Keypair | null;
-  connection: Connection;
-  selectedNetwork: NetworkInfo;
-}
 
-export const SwapPage = ({ wallet, selectedNetwork }: SwapPageProps) => {
+export const SwapPage = () => {
+  const { wallet, selectedNetwork } = useOutletContext<ContextType>();
   const [fromToken, setFromToken] = useState<TokenWithBalance | null>(null);
   const [toToken, setToToken] = useState<TokenWithBalance | null>(null);
   const [walletTokens, setWalletTokens] = useState<TokenWithBalance[]>([]);

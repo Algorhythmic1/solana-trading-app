@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Keypair, Connection } from '@solana/web3.js';
 import { EXPLORERS } from '../../constants/explorers';
 import bs58 from 'bs58'; 
-import type { NetworkInfo } from '../../types';
 import { useTheme, type ThemeName } from '../../hooks/useTheme';
+import { useOutletContext } from 'react-router-dom';
+import type { ContextType } from '../../types';
 
 const THEME_OPTIONS = [
   { name: 'Cyberpunk', id: 'cyberpunk' },
@@ -11,19 +11,9 @@ const THEME_OPTIONS = [
   { name: 'Matrix', id: 'matrix' },
 ] as const;
 
-interface SettingsPageProps {
-  wallet: Keypair | null;
-  connection: Connection;
-  selectedNetwork: NetworkInfo;
-  setSelectedNetwork: (network: NetworkInfo) => void;
-}
 
-
-export const SettingsPage = ({ 
-  wallet, 
-  selectedNetwork,
-  setSelectedNetwork 
-}: SettingsPageProps) => {
+export const SettingsPage = () => {
+  const { wallet, selectedNetwork, setSelectedNetwork } = useOutletContext<ContextType>();
   const { theme, setTheme } = useTheme();
   const [showPrivateKey, setShowPrivateKey] = useState(false);
 
