@@ -130,8 +130,8 @@ impl TokenDatabase {
   }
 
 
-  //Searches the token database by address
-  pub fn search_by_address(&self, query: String) -> Result<Vec<JupiterToken>, String> {
+  //Searches the token database by address, returns only one token since address is unique
+  pub fn search_by_address(&self, query: String) -> Result<Option<JupiterToken>, String> {
     let mut stmt = self.conn.prepare(
         "SELECT * FROM tokens WHERE address LIKE ?1 LIMIT 10"
     ).map_err(|e| e.to_string())?;
@@ -149,7 +149,7 @@ impl TokenDatabase {
       })
     }).map_err(|e| e.to_string())?
     .collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
-    Ok(tokens)
+    Ok(tokens.into_iter().next())
   }
 
 
@@ -229,7 +229,7 @@ pub async fn get_all_tokens() -> Result<Vec<JupiterToken>, String> {
 }
 
 #[tauri::command]
-pub async fn search_tokens_with_address(query: String) -> Result<Vec<JupiterToken>, String> {
+pub async fn search_tokens_with_address(query: String) -> Result<Option<JupiterToken>, String> {
   let db = TokenDatabase::new()?;
   db.search_by_address(query)
 }

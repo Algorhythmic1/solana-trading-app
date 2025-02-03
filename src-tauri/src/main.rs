@@ -17,6 +17,7 @@ use token_utils::{
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             save_to_keyring,
             load_from_keyring,

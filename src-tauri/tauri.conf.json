@@ -14,7 +14,11 @@
       "icons/icon.ico",
       "icons/icon.png"
     ]
-    
+  },
+  "plugins": {
+    "shell": {
+      "open": "https://(?:solana.fm|solscan.io|explorer.solana.com)/.*"
+    }
   },
   "app": {
     "security": {

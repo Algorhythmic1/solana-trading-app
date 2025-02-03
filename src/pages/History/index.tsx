@@ -16,8 +16,6 @@ interface TokenInfo {
   decimals: number;
 }
 
-
-
 interface ParsedTransaction {
   signature: string;
   timestamp: number;
@@ -51,11 +49,14 @@ export const HistoryPage = () => {
       setError(null);
 
       // Fetch signatures
+      console.log('Fetching signatures for address:', wallet.publicKey.toString());
       const signatures = await connection.getSignaturesForAddress(
         wallet.publicKey,
         { before, limit: 10 },
         'confirmed'
       );
+
+      console.log('Fetched signatures:', signatures);
 
       if (signatures.length < 10) {
         setHasMore(false);
@@ -65,19 +66,28 @@ export const HistoryPage = () => {
         setLastSignature(signatures[signatures.length - 1].signature);
       }
 
-      // Fetch transaction details
-      const parsedTxns = await Promise.all(
-        signatures.map(async (sig) => {
+      // Fetch transaction details with delay to avoid rate limiting on Helius Free tier
+      const parsedTxns: (ParsedTransaction | null)[] = [];
+      for (const sig of signatures) {
+        console.log('Fetching transaction for signature:', sig.signature);
+        try {
           const tx = await connection.getParsedTransaction(
-            sig.signature, 
+            sig.signature,
             {
               commitment: 'confirmed',
               maxSupportedTransactionVersion: 0
             }
           );
-          return parseTx(tx, sig, wallet.publicKey);
-        })
-      );
+          const parsed = await parseTx(tx, sig, wallet.publicKey);
+          parsedTxns.push(parsed);
+          
+          // Wait 200ms between requests (max 5 per second)
+          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (err) {
+          console.error('Error fetching transaction:', err);
+          parsedTxns.push(null);
+        }
+      }
 
       setTransactions(prev => [...prev, ...parsedTxns.filter((tx): tx is ParsedTransaction => tx !== null)]);
     } catch (err) {
@@ -146,7 +156,7 @@ export const HistoryPage = () => {
       let symbol = '';
       
       try {
-        const tokenInfo = await invoke<TokenInfo>('get_token_info', { 
+        const tokenInfo = await invoke<TokenInfo>('search_tokens_with_address', { 
           mint: relevantBalance.mint 
         });
         symbol = tokenInfo?.symbol || '';

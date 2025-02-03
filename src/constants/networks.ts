@@ -4,32 +4,39 @@ import { LayoutDashboard, SendHorizontal, History, Settings, ArrowLeftRight } fr
 import { clusterApiUrl } from '@solana/web3.js';
 import { NetworkInfo } from '../types';
 
+const rpcUrl = import.meta.env.VITE_RPC_URL;
+console.log('Initializing networks with Helius URL:', rpcUrl);
+
 export const NETWORKS: NetworkInfo[] = [
   { 
     name: 'localnet', 
     endpoint: 'http://127.0.0.1:8899',
-    cluster: 'devnet',
-    explorerUrl: 'https://explorer.solana.com'
+    cluster: 'devnet'
   },
   { 
     name: 'devnet', 
     endpoint: clusterApiUrl('devnet'),
-    cluster: 'devnet',
-    explorerUrl: 'https://explorer.solana.com'
+    cluster: 'devnet'
   },
   { 
     name: 'testnet', 
     endpoint: clusterApiUrl('testnet'),
-    cluster: 'testnet',
-    explorerUrl: 'https://explorer.solana.com'
+    cluster: 'testnet'
   },
   { 
     name: 'mainnet-beta', 
-    endpoint: 'https://mainnet.helius-rpc.com/?api-key=34ff2ba3-5858-43cc-a351-b2cf9b3420fb',
-    cluster: 'mainnet-beta',
-    explorerUrl: 'https://explorer.solana.com'
+    endpoint: rpcUrl ||clusterApiUrl('mainnet-beta'),
+    cluster: 'mainnet-beta'
   }
 ];
+
+// Add some debugging
+const mainnetNetwork = NETWORKS.find(n => n.name === 'mainnet-beta');
+console.log('Network configuration:', {
+  rpcUrl,
+  mainnetEndpoint: mainnetNetwork?.endpoint,
+  usingHelius: mainnetNetwork?.endpoint === rpcUrl
+});
 
 export const navigationItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
