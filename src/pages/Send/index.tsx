@@ -358,7 +358,6 @@ export const SendPage = () => {
 
   return (
     <div className="container cyberpunk min-h-screen p-4 bg-sol-background">
-      
       <form onSubmit={handleValidateAndConfirm} className="max-w-2xl space-y-6 bg-sol-card p-8 rounded-lg">
         <div>
           <label className="block text-sol-green mb-2">
@@ -366,7 +365,7 @@ export const SendPage = () => {
           </label>
           <input
             type="text"
-            className="cyberpunk w-full text-sm text-[color:var(--sol-text)]"
+            className="cyberpunk w-full text-sm text-[color:var(--sol-card)]"
             placeholder="Enter Solana address"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
@@ -431,11 +430,12 @@ export const SendPage = () => {
           </div>
         )}
 
-        <button
+<button
           type="submit"
           className="cyberpunk w-full"
           disabled={
             pageLoading || 
+            sending || 
             !recipient || 
             !amount || 
             !token || 
@@ -443,13 +443,22 @@ export const SendPage = () => {
               token, 
               amount, 
               nativeSolBalance
-            }
-            )
+            })
           }
         >
-          {pageLoading ? 'Loading...' : 
-          sending ?'Sending...' : 
-          'Send'}
+          {pageLoading ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="spinner w-5 h-5" />
+              <span>Fetching Balances...</span>
+            </div>
+          ) : sending ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="spinner w-5 h-5" />
+              <span>Sending...</span>
+            </div>
+          ) : (
+            'Send'
+          )}
         </button>
       </form>
 

@@ -67,6 +67,31 @@ export const SettingsPage = () => {
     }
     setIsEditingRpc(false);
   };
+
+  const maskApiKey = (url: string): string => {
+    try {
+      // Parse the URL and get the search params
+      const urlObj = new URL(url);
+      const params = new URLSearchParams(urlObj.search);
+      
+      // If there's an api-key parameter, mask it
+      if (params.has('api-key')) {
+        const key = params.get('api-key');
+        if (key) {
+          const maskedKey = `*************`;
+          params.set('api-key', maskedKey);
+          // Reconstruct the URL with masked key
+          urlObj.search = params.toString();
+          return urlObj.toString();
+        }
+      }
+      
+      return url;
+    } catch (e) {
+      // If URL parsing fails, return original
+      return url;
+    }
+  };
   
   return (
     <div className="container bg-sol-background cyberpunk min-h-screen p-8">
@@ -114,7 +139,7 @@ export const SettingsPage = () => {
         {/*TO DO: clean this up so the API key is not in the rpc url*/}
         {/* RPC URL Settings */}
         <div className="card cyberpunk">
-          <h2 className="cyberpunk text-xl mb-4">RPC Settings</h2>
+          <h2 className="cyberpunk text-xl mb-4">Set RPC URL</h2>
           <div className="flex flex-col space-y-2">
             {isEditingRpc ? (
               <>
@@ -145,7 +170,7 @@ export const SettingsPage = () => {
               </>
             ) : (
               <div className="flex flex-col space-y-2">
-                <span className="text-sol-green break-all">{selectedNetwork.endpoint}</span>
+                <span className="text-sol-green break-all">{maskApiKey(selectedNetwork.endpoint)}</span>
                 <button
                   onClick={() => setIsEditingRpc(true)}
                   className="cyberpunk modal-btn"
@@ -211,7 +236,7 @@ export const SettingsPage = () => {
                     showApiKey ? (
                       apiKey
                     ) : (
-                      '••••••••••••••••'
+                      '************'
                     )                    ) : (
                      'No API key set'
                   )}

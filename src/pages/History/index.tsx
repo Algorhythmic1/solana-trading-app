@@ -9,6 +9,7 @@ import {
 import { Navigate, useOutletContext } from 'react-router-dom';
 import { ExplorerLink } from '../../components/ExplorerLink';
 import { ContextType } from '../../types';
+import '../../styles/spinner.css';
 import { invoke } from '@tauri-apps/api/core';
 
 interface TokenInfo {
@@ -201,7 +202,13 @@ export const HistoryPage = () => {
         <div className="text-sol-error mb-4">{error}</div>
       ) : (
         <div className="space-y-4">
-          {transactions.map((tx) => (
+          {loading && transactions.length === 0 ? (
+            <div className="spinner-container">
+              <div className="spinner" />
+            </div>
+          ) : (
+            <>
+              {transactions.map((tx) => (
             <div
               key={tx.signature}
               className="card cyberpunk p-4 hover:border-sol-green/80"
@@ -245,31 +252,33 @@ export const HistoryPage = () => {
             </div>
           ))}
 
-          {loading && (
-            <div className="text-center text-sol-text py-4">
-              Loading transactions...
-            </div>
-          )}
+              {loading && (
+                <div className="spinner-container">
+                  <div className="spinner" />
+                </div>
+              )}
 
-          {hasMore && !loading && (
-            <button
-              onClick={loadMore}
-              className="cyberpunk w-full"
-            >
-              Load More
-            </button>
-          )}
+              {hasMore && !loading && (
+                <button
+                  onClick={loadMore}
+                  className="cyberpunk w-full"
+                >
+                  Load More
+                </button>
+              )}
 
-          {!hasMore && transactions.length > 0 && (
-            <div className="text-center text-sol-text py-4">
-              No more transactions to load
-            </div>
-          )}
+              {!hasMore && transactions.length > 0 && (
+                <div className="text-center text-sol-text py-4">
+                  No more transactions to load
+                </div>
+              )}
 
-          {!loading && transactions.length === 0 && (
-            <div className="text-center text-sol-text py-4">
-              No transactions found
-            </div>
+              {!loading && transactions.length === 0 && (
+                <div className="text-center text-sol-text py-4">
+                  No transactions found
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

@@ -1,4 +1,6 @@
 import { FC } from 'react';
+import { EXPLORERS } from '../../constants/explorers';
+import { open } from '@tauri-apps/plugin-shell';
 
 interface TransactionResultProps {
   signature: string;
@@ -16,14 +18,19 @@ export const TransactionResult: FC<TransactionResultProps> = ({
   network
 }) => {
   const getExplorerUrl = () => {
-    const baseUrl = 'https://solana.fm/tx/';
-    const networkParam = network === 'mainnet-beta' ? '' : `?cluster=${network}`;
-    return `${baseUrl}${signature}${networkParam}`;
+    // Get preferred explorer from localStorage or use default
+    const savedExplorer = localStorage.getItem('preferredExplorer');
+    const explorer = EXPLORERS.find(e => e.name === savedExplorer) || EXPLORERS[0];
+    
+    // Don't add network parameter for mainnet-beta
+    const networkParam = network === 'mainnet-beta' ? '' : `${explorer.networkParam}${network}`;
+    
+    return `${explorer.url}${explorer.txPath}/${signature}${networkParam}`;
   };
 
   const openExplorer = async () => {
     try {
-      await window.open(getExplorerUrl(), '_blank');
+      await open(getExplorerUrl());
     } catch (err) {
       console.error('Failed to open explorer:', err);
     }

@@ -4,8 +4,7 @@ import { LayoutDashboard, SendHorizontal, History, Settings, ArrowLeftRight } fr
 import { clusterApiUrl } from '@solana/web3.js';
 import { NetworkInfo } from '../types';
 
-const rpcUrl = import.meta.env.VITE_RPC_URL;
-console.log('Initializing networks with Helius URL:', rpcUrl);
+const currentRpcUrl = 'https://mainnet.helius-rpc.com/?api-key=' + localStorage.getItem('apiKey');
 
 export const NETWORKS: NetworkInfo[] = [
   { 
@@ -25,7 +24,7 @@ export const NETWORKS: NetworkInfo[] = [
   },
   { 
     name: 'mainnet-beta', 
-    endpoint: rpcUrl ||clusterApiUrl('mainnet-beta'),
+    endpoint: currentRpcUrl ||clusterApiUrl('mainnet-beta'),
     cluster: 'mainnet-beta'
   }
 ];
@@ -33,9 +32,9 @@ export const NETWORKS: NetworkInfo[] = [
 // Add some debugging
 const mainnetNetwork = NETWORKS.find(n => n.name === 'mainnet-beta');
 console.log('Network configuration:', {
-  rpcUrl,
+  currentRpcUrl,
   mainnetEndpoint: mainnetNetwork?.endpoint,
-  usingHelius: mainnetNetwork?.endpoint === rpcUrl
+  usingHelius: mainnetNetwork?.endpoint === currentRpcUrl
 });
 
 export const navigationItems = [
