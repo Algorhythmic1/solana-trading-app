@@ -209,6 +209,8 @@ export const SendPage = () => {
 
   const handleConfirmTransaction = async () => {
     if (!pendingTx) return;
+
+    setShowConfirmation(false);
     setSending(true);
   
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
@@ -317,7 +319,6 @@ export const SendPage = () => {
   
     } finally {
       setSending(false);
-      setShowConfirmation(false);
       setPendingTx(null);
     }
   };
@@ -430,7 +431,7 @@ export const SendPage = () => {
           </div>
         )}
 
-<button
+        <button
           type="submit"
           className="cyberpunk w-full"
           disabled={
@@ -485,6 +486,17 @@ export const SendPage = () => {
           }}
           connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
         />
+      )}
+
+      {sending && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-sol-card p-6 rounded-lg max-w-md w-full text-center">
+            <div className="spinner-container">
+              <div className="spinner" />
+            </div>
+            <p className="text-sol-green mt-4">Processing Transaction...</p>
+          </div>
+        </div>
       )}
 
       {transactionResult && (
