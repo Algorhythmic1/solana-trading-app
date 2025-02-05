@@ -20,12 +20,11 @@ export const SwapPage = () => {
   const [walletTokens, setWalletTokens] = useState<TokenWithBalance[]>([]);
   const [fromAmount, setFromAmount] = useState<string>('');
   const [toAmount, setToAmount] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'fetching_quote' | 'fetching_balances' | 'preparing_swap' | 'swapping' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [slippage, setSlippage] = useState<number>(1);
   const [isCustomSlippage, setIsCustomSlippage] = useState(false);
   const [quote, setQuote] = useState<JupiterQuote | null>(null);
-  const [isSwapping, setIsSwapping] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [transaction, setTransaction] = useState<VersionedTransaction | null>(null);
   const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
@@ -63,7 +62,7 @@ export const SwapPage = () => {
       }
 
       try {
-        setLoading(true);
+        setStatus('fetching_quote');
         setError(null);
         const quoteResponse = await getSwapQuote(
           fromToken.address,
@@ -83,7 +82,7 @@ export const SwapPage = () => {
         setToAmount('');
         setQuote(null);
       } finally {
-        setLoading(false);
+        setStatus('idle');
       }
     };
 
@@ -99,15 +98,17 @@ export const SwapPage = () => {
       if (!wallet) return;
       
       try {
+        setStatus('fetching_balances');
         const tokens = await fetchTokenBalances({
           wallet,
-          selectedNetwork,
-          setLoading
+          selectedNetwork
         });
         setWalletTokens(tokens);
       } catch (error) {
         console.error('Failed to fetch token balances:', error);
         setWalletTokens([]);
+      } finally {
+        setStatus('idle');
       }
     };
 
@@ -123,8 +124,7 @@ export const SwapPage = () => {
         await fetchTokenBalances({
           wallet,
           selectedNetwork,
-          setBalance: setNativeSolBalance,
-          setLoading
+          setBalance: setNativeSolBalance
         });
       } catch (error) {
         console.error('Failed to fetch balances:', error);
@@ -143,7 +143,7 @@ export const SwapPage = () => {
     if (!wallet || !quote || !fromToken || !toToken) return;
 
     try {
-      setLoading(true);
+      setStatus('fetching_quote');
       // Get the swap transaction
       const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
         method: 'POST',
@@ -167,13 +167,13 @@ export const SwapPage = () => {
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to prepare swap');
     } finally {
-      setLoading(false);
+      setStatus('idle');
     }
   };
 
   const handleConfirmSwap = async () => {
     if (!transaction) return;
-    setIsSwapping(true);
+    setStatus('swapping');
     
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
@@ -191,7 +191,7 @@ export const SwapPage = () => {
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to execute swap');
     } finally {
-      setIsSwapping(false);
+      setStatus('idle');
     }
   };
 
@@ -357,13 +357,34 @@ export const SwapPage = () => {
                 !fromToken || 
                 !toToken || 
                 !fromAmount || 
-                loading || 
-                isSwapping ||
+                status !== 'idle' ||
                 (fromToken?.balance && Number(fromAmount) > Number(fromToken.balance) / Math.pow(10, fromToken.decimals))
               )}
               onClick={handleReviewSwap}
             >
-              {isSwapping ? 'Executing Swap...' : loading ? 'Preparing Swap...' : 'Review Swap'}
+              {status === 'fetching_quote' ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="spinner w-5 h-5" />
+                  <span>Fetching Quote...</span>
+                </div>
+              ) : status === 'fetching_balances' ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="spinner w-5 h-5" />
+                  <span>Updating Balances...</span>
+                </div>
+              ) : status === 'preparing_swap' ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="spinner w-5 h-5" />
+                  <span>Preparing Swap...</span>
+                </div>
+              ) : status === 'swapping' ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="spinner w-5 h-5" />
+                  <span>Swapping...</span>
+                </div>
+              ) : (
+                'Review Swap'
+              )}
             </button>
           </div>
         </div>
