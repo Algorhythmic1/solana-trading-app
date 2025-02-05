@@ -119,7 +119,7 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
   return (
     <div className="h-full w-full bg-sol-background overflow-auto p-4 grid-bg">
       <div className="container cyberpunk max-w-full mb-8 bg-sol-background/50">
-        <h1 className="cyberpunk text-sol-green text-center">Welcome to SOL Edge</h1>
+        <h1 className="cyberpunk text-sol-green text-center">Welcome to SOL Edge Browser</h1>
         
         <div className="mb-8 w-full max-w-[600px] mx-auto">
           <label className="block mb-2 text-sol-green">Stored Wallets</label>
