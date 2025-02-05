@@ -2,7 +2,6 @@
 
 import { useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
-import appIcon from '/src-tauri/icons/Square71x71Logo.png'
 import { navigationItems } from '../../constants/networks';
 
 interface SidebarProps {
@@ -53,8 +52,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       `}>
         <div className="p-2 border-b-2 border-sol-green">
           <div className="flex items-center gap-2">
-            <img src={appIcon} alt="SOLedge Browser" className="w-10 h-10" />
-            <span className="font-bold text-lg text-sol-green">SOLedge Browser</span>
+            <span className="font-bold text-lg text-sol-green">SOL Edge Browser</span>
           </div>
         </div>
         <nav className="p-2 space-y-1 sol-accent">

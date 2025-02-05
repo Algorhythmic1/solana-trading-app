@@ -5,6 +5,7 @@ import { NetworkInfo } from '../../types';
 import { Sidebar } from './Sidebar';
 import { NetworkSelector } from '../network/NetworkSelector';
 import { NETWORKS } from '../../constants/networks';
+import appIcon from '/src-tauri/icons/Square107x107Logo.png';
 
 interface AuthenticatedLayoutProps {
   wallet: Keypair | null;
@@ -50,6 +51,9 @@ export const AuthenticatedLayout = ({
                 >
                   Disconnect
                 </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <img src={appIcon} alt="SOL Edge Browser" className="w-18 h-18" />
               </div>
             </div>
           </nav>

@@ -21,10 +21,21 @@ export const fetchTokenBalances = async ({
   
   try {
     // Get SOL balance if needed
+    const solBalance = await connection.getBalance(wallet.publicKey);
     if (setBalance) {
-      const solBalance = await connection.getBalance(wallet.publicKey);
       setBalance(solBalance / LAMPORTS_PER_SOL);
     }
+
+    // Create TokenWithBalance for SOL
+    const nativeSolToken: TokenWithBalance = {
+      address: 'native',
+      chainId: 101,
+      decimals: 9,
+      name: 'Solana',
+      symbol: 'SOL',
+      logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+      balance: solBalance.toString()
+    };
 
     const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
       wallet.publicKey,
@@ -38,17 +49,8 @@ export const fetchTokenBalances = async ({
         const balance = account.account.data.parsed.info.tokenAmount.amount;
         const decimals = account.account.data.parsed.info.tokenAmount.decimals;
 
-        // Get token info with retries
         let tokenInfo = null;
-        for (let i = 0; i < 3; i++) {
-          try {
-            tokenInfo = (await searchTokensByAny(mintAddress))[0];
-            if (tokenInfo) break;
-          } catch (err) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-        
+        tokenInfo = (await searchTokensByAny(mintAddress))[0];
         if (!tokenInfo) return null;
 
         return {
@@ -61,7 +63,7 @@ export const fetchTokenBalances = async ({
       }
     }))).filter((t): t is TokenWithBalance => t !== null);
 
-    return tokens;
+    return [nativeSolToken, ...tokens];
   } catch (error) {
     if (setBalance) setBalance(null);
     throw error;
