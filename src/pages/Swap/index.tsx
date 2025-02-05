@@ -213,6 +213,11 @@ export const SwapPage = () => {
                       const withBalance = walletTokens.find(t => t.address === selectedToken.address);
                       if (withBalance) {
                         setFromToken(withBalance);
+                      } else {
+                        setFromToken({
+                          ...selectedToken,
+                          balance: '0',
+                        });
                       }
                     }}
                     placeholder="Select token to swap from..."
@@ -267,6 +272,11 @@ export const SwapPage = () => {
                       const withBalance = walletTokens.find(t => t.address === selectedToken.address);
                       if (withBalance) {
                         setToToken(withBalance);
+                      } else {
+                        setToToken({
+                          ...selectedToken,
+                          balance: '0',
+                        });
                       }
                     }}
                     placeholder="Select token to swap to..."

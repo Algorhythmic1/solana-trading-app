@@ -69,11 +69,11 @@ export const DashboardPage = () => {
             <h2 className="cyberpunk">Token Balances</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               {walletTokens.map((token: TokenWithBalance) => (
-                <div key={token.mint} className="card cyberpunk p-4 flex items-center space-x-4">
+                <div key={token.address} className="card cyberpunk p-4 flex items-center space-x-4">
                   <div className="w-12 h-12 flex-shrink-0">
-                    {token.image ? (
+                    {token.logoURI ? (
                       <img 
-                        src={token.image} 
+                        src={token.logoURI} 
                         alt={token.symbol}
                         className="w-full h-full object-contain rounded-full"
                         onError={(e) => {

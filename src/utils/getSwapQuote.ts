@@ -1,11 +1,18 @@
 import { JupiterQuote } from '../types';
 
+const WSOL_MINT = 'So11111111111111111111111111111111111111112';
+
 export async function getSwapQuote(
   inputMint: string,
   outputMint: string,
   amount: number,
   slippage: number
 ): Promise<JupiterQuote> {
+
+  // Convert native to WSOL mint
+  const actualInputMint = inputMint === 'native' ? WSOL_MINT : inputMint;
+  const actualOutputMint = outputMint === 'native' ? WSOL_MINT : outputMint;
+
   console.log('Requesting quote with params:', {
     inputMint,
     outputMint,
@@ -14,8 +21,8 @@ export async function getSwapQuote(
   });
 
   const url = new URL('https://api.jup.ag/swap/v1/quote');
-  url.searchParams.append('inputMint', inputMint);
-  url.searchParams.append('outputMint', outputMint);
+  url.searchParams.append('inputMint', actualInputMint);
+  url.searchParams.append('outputMint', actualOutputMint);
   url.searchParams.append('amount', amount.toString());
   url.searchParams.append('slippageBps', Math.round(slippage * 100).toString());
 
@@ -34,3 +41,4 @@ export async function getSwapQuote(
     throw error;
   }
 }
+

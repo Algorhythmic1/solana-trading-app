@@ -144,7 +144,7 @@ export const SendPage = () => {
         setShowConfirmation(true);
       } else {
         // SPL Token Transfer
-        const mintPubkey = new PublicKey(token.mint);
+        const mintPubkey = new PublicKey(token.address);
         const fromTokenAccount = await getAssociatedTokenAddressSync(
           mintPubkey,
           wallet.publicKey,

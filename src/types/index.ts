@@ -26,12 +26,7 @@ export interface JupiterToken {
 }
 
 export interface TokenWithBalance extends JupiterToken {
-  mint: string;
-  symbol: string;
   balance: string;
-  decimals: number;
-  image: string | null;
-  name: string;
 }
 
 export interface JupiterQuote {
