@@ -500,6 +500,7 @@ export const SendPage = () => {
       )}
 
       {transactionResult && (
+        
         <TransactionResult
           signature={transactionResult.signature}
           success={transactionResult.success}
