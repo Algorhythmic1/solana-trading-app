@@ -30,5 +30,5 @@ dist-ssr
 *:shield
 
 # App database
-src-tauri/tokens.db
+src-tauri/tokens.db*
 test-ledger/
