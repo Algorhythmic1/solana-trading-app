@@ -32,3 +32,16 @@ dist-ssr
 # App database
 src-tauri/tokens.db*
 test-ledger/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Rust test artifacts
+target/debug/deps/
+target/debug/build/
