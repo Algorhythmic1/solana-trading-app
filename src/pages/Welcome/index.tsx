@@ -129,19 +129,19 @@ export const WelcomePage = ({ setWallet }: WelcomePageProps) => {
             <div className="space-y-2 max-h-64 overflow-y-auto w-full">
               {storedWallets.map((wallet) => (
                 <button
-                  key={wallet.public_key}
-                  onClick={() => loadSelectedWallet(wallet.public_key, wallet.account)}
-                  className="card cyberpunk w-full text-left p-4 hover:border-sol-green/80 flex justify-between items-center"
-                  disabled={loading}
-                >
-                  <div className="flex flex-col flex-grow mr-4">
-                    <span className="text-sm text-sol-text">Public Key:</span>
-                    <span className="text-sm font-mono text-sol-green truncate max-w-[300px]">
-                      {wallet.public_key}
-                    </span>
-                  </div>
-                  <span className="text-sol-green text-sm whitespace-nowrap">Select →</span>
-                </button>
+                key={wallet.public_key}
+                onClick={() => loadSelectedWallet(wallet.public_key, wallet.account)}
+                className="card cyberpunk w-full text-left p-4 hover:border-sol-green/80 flex justify-between items-center wallet-address"
+                disabled={loading}
+              >
+                <div className="flex flex-col flex-grow mr-4">
+                  <span className="text-sm text-sol-text">Public Key:</span>
+                  <span className="text-sm font-mono text-sol-green truncate max-w-[300px] font-medium">
+                    {wallet.public_key}
+                  </span>
+                </div>
+                <span className="text-sol-green text-sm whitespace-nowrap">Select →</span>
+              </button>
               ))}
             </div>
           )}

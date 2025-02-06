@@ -10,7 +10,7 @@ interface TransactionResultProps {
   network: string;  // 'mainnet' | 'devnet' | etc.
 }
 
-export const TransactionResult: FC<TransactionResultProps> = ({
+export const TransactionResultModal: FC<TransactionResultProps> = ({
   signature,
   success,
   error,

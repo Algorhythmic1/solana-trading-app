@@ -56,3 +56,10 @@ interface RoutePlanStep {
   };
   percent: number;
 }
+
+export interface TransactionResult {
+  signature: string;
+  success: boolean;
+  error?: string;
+  network: string;
+}

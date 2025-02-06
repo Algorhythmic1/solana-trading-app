@@ -132,6 +132,10 @@ button.cyberpunk::before {
   );
 }
 
+.wallet-address {
+  text-transform: none !important;
+}
+
 
 button.cyberpunk.modal-btn {
   padding: 8px 16px;  

@@ -17,6 +17,11 @@ export async function executeSwap(
       requiresSignatures: transaction.message.header.numRequiredSignatures
     });
 
+    // Verify transaction is properly signed
+    if (!transaction.signatures[0] || transaction.signatures[0].every(byte => byte === 0)) {
+      throw new Error('Transaction not properly signed');
+    }
+
     const txid = await connection.sendTransaction(transaction, {
       skipPreflight: false,
       preflightCommitment: 'confirmed',

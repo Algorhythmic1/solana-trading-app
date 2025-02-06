@@ -20,14 +20,8 @@ import {
   createTransferInstruction, 
   getAssociatedTokenAddressSync 
 } from '@solana/spl-token';
-import { TransactionResult } from '../../components/modals/TransactionResult';
-
-interface TransactionResult {
-  signature: string;
-  success: boolean;
-  error?: string;
-  network: string;
-}
+import { TransactionResult } from '../../types';
+import { TransactionResultModal } from '../../components/modals/TransactionResult';
 
 export const SendPage = () => {
   const { wallet, selectedNetwork, } = useOutletContext<ContextType>();
@@ -501,7 +495,7 @@ export const SendPage = () => {
 
       {transactionResult && (
         
-        <TransactionResult
+        <TransactionResultModal
           signature={transactionResult.signature}
           success={transactionResult.success}
           error={transactionResult.error}

@@ -11,7 +11,8 @@ import { TransactionConfirmation } from '../../components/modals/TransactionConf
 import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
 import { useOutletContext } from 'react-router-dom';
 import type { ContextType } from '../../types';
-
+import { TransactionResult } from '../../types';
+import { TransactionResultModal } from '../../components/modals/TransactionResult';
 
 export const SwapPage = () => {
   const { wallet, selectedNetwork } = useOutletContext<ContextType>();
@@ -28,6 +29,7 @@ export const SwapPage = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [transaction, setTransaction] = useState<VersionedTransaction | null>(null);
   const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
+  const [transactionResult, setTransactionResult] = useState<TransactionResult | null>(null);
 
   const slippagePresets = [0.1, 0.3, 1.0];
 
@@ -200,25 +202,42 @@ export const SwapPage = () => {
 
     try {
 
-      if (transaction.signatures.length === 0) {
-        console.log('handleConfirmSwap - signing transaction with wallet: ', wallet.publicKey.toString());
+      if (transaction.signatures.length === 0 || transaction.signatures[0].every(byte => byte === 0)) {
+        console.log('handleConfirmSwap - signature missing or all 0s; signing transaction with wallet: ', wallet.publicKey.toString());
+        transaction.signatures = [];
         transaction.sign([wallet]);
+      }
+
+      const signature = transaction.signatures[0];
+      if (!signature || signature.every(byte => byte === 0)) {
+        throw new Error('Transaction not properly signed - invalid signature');
       }
 
       console.log('handleConfirmSwap - Transaction after signing:', {
         signatures: transaction.signatures,
+        publicKey: wallet.publicKey.toString(),
         numSignatures: transaction.signatures.length
       });
 
+
       const result = await executeSwap(transaction, connection);
       if (result.success) {
+        setTransactionResult({
+          signature: result.txid,
+          success: true,
+          network: selectedNetwork.name
+        });
         setShowConfirmation(false);
         setTransaction(null);
-        // Clear form
         setFromAmount('');
         setToAmount('');
       } else {
-        setError(result.error || 'handleConfirmSwap - Unknown error occurred');
+        setTransactionResult({
+          signature: result.txid || '',
+          success: false,
+          error: result.error || 'Unknown error occurred',
+          network: selectedNetwork.name
+        });
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'handleConfirmSwap - Failed to execute swap');
@@ -461,6 +480,16 @@ export const SwapPage = () => {
                 ]
               }}
               connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
+            />
+          )}
+
+          {transactionResult && (
+            <TransactionResultModal
+              signature={transactionResult.signature}
+              success={transactionResult.success}
+              error={transactionResult.error}
+              onClose={() => setTransactionResult(null)}
+              network={selectedNetwork.name}
             />
           )}
         </div>
