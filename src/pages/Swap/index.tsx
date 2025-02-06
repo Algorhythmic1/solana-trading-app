@@ -144,6 +144,14 @@ export const SwapPage = () => {
 
     try {
       setStatus('fetching_quote');
+      console.log('handleReviewSwap - Preparing swap with params:', {
+        quoteResponse: quote,
+        userPublicKey: wallet.publicKey.toString(),
+        wrapAndUnwrapSol: true,
+        computeUnitPriceMicroLamports: 1,
+        asLegacyTransaction: false,
+      });
+
       // Get the swap transaction
       const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
         method: 'POST',
@@ -157,7 +165,15 @@ export const SwapPage = () => {
         }),
       });
 
+      if (!swapResponse.ok) {
+        const errorData = await swapResponse.json();
+        console.error('handleReviewSwap - Swap API error:', errorData);
+        throw new Error(errorData.error || 'Failed to prepare swap');
+      }
+
       const swapData = await swapResponse.json();
+      console.log('handleReviewSwap - Received swap transaction:', swapData);
+
       const swapTransaction = VersionedTransaction.deserialize(
         Buffer.from(swapData.swapTransaction, 'base64')
       );
@@ -172,12 +188,28 @@ export const SwapPage = () => {
   };
 
   const handleConfirmSwap = async () => {
-    if (!transaction) return;
+    if (!wallet ||!transaction) return;
     setStatus('swapping');
     
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
-    
+
+    console.log('handleConfirmSwap - Transaction entering function: ', {
+      signatures: transaction.signatures,
+      numSignatures: transaction.signatures.length
+    });
+
     try {
+
+      if (transaction.signatures.length === 0) {
+        console.log('handleConfirmSwap - signing transaction with wallet: ', wallet.publicKey.toString());
+        transaction.sign([wallet]);
+      }
+
+      console.log('handleConfirmSwap - Transaction after signing:', {
+        signatures: transaction.signatures,
+        numSignatures: transaction.signatures.length
+      });
+
       const result = await executeSwap(transaction, connection);
       if (result.success) {
         setShowConfirmation(false);
@@ -186,10 +218,10 @@ export const SwapPage = () => {
         setFromAmount('');
         setToAmount('');
       } else {
-        setError(result.error || 'Unknown error occurred');
+        setError(result.error || 'handleConfirmSwap - Unknown error occurred');
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to execute swap');
+      setError(error instanceof Error ? error.message : 'handleConfirmSwap - Failed to execute swap');
     } finally {
       setStatus('idle');
     }
