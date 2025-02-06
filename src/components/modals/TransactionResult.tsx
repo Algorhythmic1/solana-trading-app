@@ -31,7 +31,6 @@ export const TransactionResultModal: FC<TransactionResultProps> = ({
   const openExplorer = async () => {
     try {
       await open(getExplorerUrl());
-      await open(getExplorerUrl());
     } catch (err) {
       console.error('Failed to open explorer:', err);
     }

@@ -22,7 +22,7 @@ import {
 } from '@solana/spl-token';
 import { TransactionResult } from '../../types';
 import { TransactionResultModal } from '../../components/modals/TransactionResult';
-
+import { getPriorityFeeEstimate } from '../../utils/getPriorityFeeEstimate';
 export const SendPage = () => {
   const { wallet, selectedNetwork, } = useOutletContext<ContextType>();
 
@@ -71,29 +71,6 @@ export const SendPage = () => {
   };
 
   useEffect(() => {
-    const handleFetchTokens = async () => {
-      if (!wallet) return;
-      
-      try {
-        console.log('Fetching token balances...');
-        const tokens = await fetchTokenBalances({
-          wallet,
-          selectedNetwork,
-          setBalance: setNativeSolBalance,
-          setLoading: setPageLoading
-        });
-        console.log('Fetched tokens:', tokens);
-        setWalletTokens(tokens);
-      } catch (error) {
-        console.error('Failed to fetch token balances:', error);
-        setWalletTokens([]);
-      }
-    };
-
-    handleFetchTokens();
-  }, [wallet, selectedNetwork]);
-
-  useEffect(() => {
     handleFetchTokens();
   }, [wallet, selectedNetwork]);
 
@@ -118,8 +95,8 @@ export const SendPage = () => {
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
       
       if (token.address === 'native') {
-        const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
 
+        const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
         const transaction = new VersionedTransaction(
           new TransactionMessage({
             payerKey: wallet.publicKey,
@@ -158,6 +135,7 @@ export const SendPage = () => {
         // Build instructions array
         const instructions = [];
 
+        // This is just a default minimum fee to avoid transaction failure
         const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
           microLamports: 10000,
         });
@@ -210,22 +188,22 @@ export const SendPage = () => {
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
     try {
-      // Log original transaction for debugging
-      console.log('Original transaction:', {
-        instructions: pendingTx.message.compiledInstructions,
-        accounts: pendingTx.message.staticAccountKeys.map(key => key.toString())
-      });
-  
       // Get fresh blockhash immediately before sending
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-      console.log('New blockhash:', latestBlockhash.blockhash);
+      const estimate = await getPriorityFeeEstimate('Min', pendingTx, selectedNetwork.endpoint);
+      console.log('Priority fee estimate:', estimate);
+      const priorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: estimate.priorityFeeEstimate,
+      });
       
       // Update transaction with fresh blockhash
       const messageV0 = pendingTx.message;
       const newMessage = new TransactionMessage({
         payerKey: wallet.publicKey,
         recentBlockhash: latestBlockhash.blockhash,
-        instructions: messageV0.compiledInstructions.map(ix => ({
+        instructions: [
+          priorityFee,
+          ...messageV0.compiledInstructions.map(ix => ({
           programId: messageV0.staticAccountKeys[ix.programIdIndex],
           accounts: ix.accountKeyIndexes.map(idx => messageV0.staticAccountKeys[idx]),
           data: Buffer.from(ix.data),
@@ -233,8 +211,9 @@ export const SendPage = () => {
             pubkey: messageV0.staticAccountKeys[idx],
             isSigner: messageV0.isAccountSigner(idx),
             isWritable: messageV0.isAccountWritable(idx)
+            }))
           }))
-        }))
+        ]
       }).compileToV0Message();
   
       // Log new message for debugging
@@ -276,7 +255,6 @@ export const SendPage = () => {
       }
   
       console.log('Transaction confirmed:', signature);
-      await handleFetchTokens();
   
       setTransactionResult({
         signature,
@@ -287,30 +265,31 @@ export const SendPage = () => {
       // Clear form on success
       setRecipient('');
       setAmount('');
+      await handleFetchTokens();
   
     } catch (err) {
       console.error('Send error type:', err instanceof Error ? err.constructor.name : 'Unknown');
       console.error('Send error full details:', err);
-  
+    
+      let errorMessage = err instanceof Error ? err.message : 'Failed to send transaction';
+      
       if (err instanceof SendTransactionError) {
         try {
           const logs = await err.getLogs(connection);
           console.error('Transaction simulation logs:', logs);
-          throw new Error(`Simulation failed: ${logs ? logs.join('\n') : err.message}`);
+          errorMessage = `Simulation failed: ${logs ? logs.join('\n') : err.message}`;
         } catch (logError) {
           console.error('Error getting logs:', logError);
-          throw err;
         }
       }
-  
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send transaction';
+    
+      // Single state update
       setTransactionResult({
         signature: '',
         success: false,
         error: errorMessage,
         network: selectedNetwork.name
       });
-  
     } finally {
       setSending(false);
       setPendingTx(null);
