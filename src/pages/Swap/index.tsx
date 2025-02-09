@@ -5,7 +5,7 @@ import { TokenSelector } from '../../components/TokenSelector';
 import { getSwapQuote } from '../../utils/getSwapQuote';
 import type { TokenWithBalance, JupiterQuote } from '../../types';
 import { Connection, VersionedTransaction } from '@solana/web3.js';
-import { QuoteDetails } from '../../components/QuoteDetails';
+import { QuoteDetails } from '../../components/modals/QuoteDetails';
 import { executeSwap } from '../../utils/executeSwap';
 import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
 import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
@@ -21,7 +21,7 @@ export const SwapPage = () => {
   const [walletTokens, setWalletTokens] = useState<TokenWithBalance[]>([]);
   const [fromAmount, setFromAmount] = useState<string>('');
   const [toAmount, setToAmount] = useState<string>('');
-  const [status, setStatus] = useState<'idle' | 'fetching_quote' | 'fetching_balances' | 'preparing_swap' | 'swapping' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'fetching_quote' | 'fetching_balances' | 'preparing_swap' | 'swapping' | 'complete' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [slippage, setSlippage] = useState<number>(1);
   const [isCustomSlippage, setIsCustomSlippage] = useState(false);
@@ -50,6 +50,67 @@ export const SwapPage = () => {
     if (numValue >= 0 && numValue <= 100) {
       setSlippage(numValue);
     }
+  };
+
+  const renderModalContent = () => {
+    if (!showConfirmation) return null;
+
+    if (transactionResult) {
+      return (
+        <TransactionResultModal
+          signature={transactionResult.signature}
+          success={transactionResult.success}
+          error={transactionResult.error}
+          onClose={() => {
+            setShowConfirmation(false);
+            setTransactionResult(null);
+          }}
+          network={selectedNetwork.name}
+        />
+      );
+    }
+
+    if (status === 'swapping') {
+      return (
+        <div className="card cyberpunk w-full max-w-[480px] min-h-[480px] flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="loading-spinner"></div>
+            <p className="text-sol-text">Processing Swap...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!transaction || !fromToken || !toToken || !quote) return null;
+
+    return (
+      <TransactionConfirmation
+        transaction={transaction}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmSwap}
+        expectedChanges={{
+          sol: 0,
+          currentSolBalance: nativeSolBalance || 0,
+          tokens: [
+            {
+              mint: fromToken.address,
+              symbol: fromToken.symbol,
+              amount: -Number(fromAmount),
+              decimals: fromToken.decimals,
+              currentBalance: Number(fromToken.balance) / Math.pow(10, fromToken.decimals)
+            },
+            {
+              mint: toToken.address,
+              symbol: toToken.symbol,
+              amount: Number(quote.outAmount) / Math.pow(10, toToken.decimals),
+              decimals: toToken.decimals,
+              currentBalance: Number(toToken.balance) / Math.pow(10, toToken.decimals)
+            }
+          ]
+        }}
+        connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
+      />
+    );
   };
 
   // Fetch quote when inputs change or on interval
@@ -89,7 +150,7 @@ export const SwapPage = () => {
     };
 
     fetchQuote();
-    intervalId = setInterval(fetchQuote, 10000);
+    intervalId = setInterval(fetchQuote, 20000);
 
     return () => clearInterval(intervalId);
   }, [fromToken, toToken, fromAmount, slippage]);
@@ -143,29 +204,34 @@ export const SwapPage = () => {
 
   const handleReviewSwap = async () => {
     if (!wallet || !quote || !fromToken || !toToken) return;
+    setShowConfirmation(true);
+  };
+
+
+  const handleConfirmSwap = async () => {
+    if (!wallet || !quote || !fromToken || !toToken) return;
+    setStatus('swapping');
 
     try {
-      setStatus('fetching_quote');
-      console.log('handleReviewSwap - Preparing swap with params:', {
-        quoteResponse: quote,
-        userPublicKey: wallet.publicKey.toString(),
-        wrapAndUnwrapSol: true,
-        computeUnitPriceMicroLamports: 1,
-        asLegacyTransaction: false,
-      });
 
       // Get the swap transaction
-      const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quoteResponse: quote,
-          userPublicKey: wallet.publicKey.toString(),
-          wrapAndUnwrapSol: true,
-          computeUnitPriceMicroLamports: 1,
-          asLegacyTransaction: false,
-        }),
-      });
+      const swapResponse = await fetch('https://api.jup.ag/swap/v1/swap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quoteResponse: quote,
+            userPublicKey: wallet.publicKey.toString(),
+            dynamicComputeUnitLimit: true,
+            dynamicSlippage: true,
+            prioritizationFeeLamports: {
+              priorityLevelWithMaxLamports: {
+                maxLamports: 10000,
+                priorityLevel: "medium"
+              }
+            }
+          })
+        }
+      );
 
       if (!swapResponse.ok) {
         const errorData = await swapResponse.json();
@@ -173,76 +239,36 @@ export const SwapPage = () => {
         throw new Error(errorData.error || 'Failed to prepare swap');
       }
 
-      const swapData = await swapResponse.json();
-      console.log('handleReviewSwap - Received swap transaction:', swapData);
-
+      const transactionBase64 = await swapResponse.json();
+      console.log('handleReviewSwap - Built swap transaction:', transactionBase64);
       const swapTransaction = VersionedTransaction.deserialize(
-        Buffer.from(swapData.swapTransaction, 'base64')
+        Buffer.from(transactionBase64.swapTransaction, 'base64')
       );
 
-      setTransaction(swapTransaction);
-      setShowConfirmation(true);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to prepare swap');
-    } finally {
-      setStatus('idle');
-    }
-  };
-
-  const handleConfirmSwap = async () => {
-    if (!wallet ||!transaction) return;
-    setStatus('swapping');
-    
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
-
-    console.log('handleConfirmSwap - Transaction entering function: ', {
-      signatures: transaction.signatures,
-      numSignatures: transaction.signatures.length
-    });
-
+    
     try {
-
-      if (transaction.signatures.length === 0 || transaction.signatures[0].every(byte => byte === 0)) {
-        console.log('handleConfirmSwap - signature missing or all 0s; signing transaction with wallet: ', wallet.publicKey.toString());
-        transaction.signatures = [];
-        transaction.sign([wallet]);
-      }
-
-      const signature = transaction.signatures[0];
-      if (!signature || signature.every(byte => byte === 0)) {
-        throw new Error('Transaction not properly signed - invalid signature');
-      }
-
-      console.log('handleConfirmSwap - Transaction after signing:', {
-        signatures: transaction.signatures,
-        publicKey: wallet.publicKey.toString(),
-        numSignatures: transaction.signatures.length
-      });
-
-
       const result = await executeSwap(transaction, connection);
+      setTransactionResult({
+        signature: result.txid,
+        success: result.success,
+        error: result.error,
+        network: selectedNetwork.name
+      });
       if (result.success) {
-        setTransactionResult({
-          signature: result.txid,
-          success: true,
-          network: selectedNetwork.name
-        });
-        setShowConfirmation(false);
         setTransaction(null);
         setFromAmount('');
         setToAmount('');
-      } else {
-        setTransactionResult({
-          signature: result.txid || '',
-          success: false,
-          error: result.error || 'Unknown error occurred',
-          network: selectedNetwork.name
-        });
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'handleConfirmSwap - Failed to execute swap');
+      setTransactionResult({
+        signature: '',
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to execute swap',
+        network: selectedNetwork.name
+      });
     } finally {
-      setStatus('idle');
+      setStatus('complete');
     }
   };
 
@@ -451,47 +477,17 @@ export const SwapPage = () => {
             </div>
           )}
 
-          {showConfirmation && transaction && fromToken && toToken && quote && (
-            <TransactionConfirmation
-              transaction={transaction}
-              onClose={() => {
-                setShowConfirmation(false);
-                setTransaction(null);
-              }}
-              onConfirm={handleConfirmSwap}
-              expectedChanges={{
-                sol: 0,
-                currentSolBalance: nativeSolBalance || 0,
-                tokens: [
-                  {
-                    mint: fromToken.address,
-                    symbol: fromToken.symbol,
-                    amount: -Number(fromAmount),
-                    decimals: fromToken.decimals,
-                    currentBalance: Number(fromToken.balance) / Math.pow(10, fromToken.decimals)
-                  },
-                  {
-                    mint: toToken.address,
-                    symbol: toToken.symbol,
-                    amount: Number(quote.outAmount) / Math.pow(10, toToken.decimals),
-                    decimals: toToken.decimals,
-                    currentBalance: Number(toToken.balance) / Math.pow(10, toToken.decimals)
-                  }
-                ]
-              }}
-              connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
-            />
+          {/* Confirmation and Result Modals */}
+          
+          {showConfirmation && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+              <div className="absolute inset-0 bg-black/80" />
+              <div className="relative z-10">
+                {renderModalContent()}
+              </div>
+            </div>
           )}
 
-          {transactionResult && (
-            <TransactionResultModal
-              signature={transactionResult.signature}
-              success={transactionResult.success}
-              error={transactionResult.error}
-              onClose={() => setTransactionResult(null)}
-              network={selectedNetwork.name}
-            />
-          )}
         </div>
       </div>
     </div>

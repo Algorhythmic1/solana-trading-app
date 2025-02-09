@@ -1,4 +1,4 @@
-import { JupiterQuote } from '../types';
+import { JupiterQuote } from '../../types';
 
 interface QuoteDetailsProps {
   quote: JupiterQuote;
@@ -12,6 +12,8 @@ export const QuoteDetails = ({ quote, fromSymbol, toSymbol }: QuoteDetailsProps)
     : '0.00';
 
   const totalFees = quote.routePlan.reduce((acc, step) => acc + step.swapInfo.feeAmount, 0);
+  console.log('totalFees', totalFees);
+  console.log('totalFees / 10 ** 9', totalFees / 10 ** 9);
   const rate = (quote.outAmount / quote.inAmount).toFixed(6);
 
   return (

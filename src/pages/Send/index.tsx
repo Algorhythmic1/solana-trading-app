@@ -190,11 +190,21 @@ export const SendPage = () => {
     try {
       // Get fresh blockhash immediately before sending
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-      const estimate = await getPriorityFeeEstimate('Min', pendingTx, selectedNetwork.endpoint);
-      console.log('Priority fee estimate:', estimate);
-      const priorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: estimate.priorityFeeEstimate,
-      });
+
+      let priorityFee;
+
+      // Use priority fee api if on mainnet-beta, else set a default fee
+      if (selectedNetwork.name === 'mainnet-beta') {
+        const estimate = await getPriorityFeeEstimate('Min', pendingTx, selectedNetwork.endpoint);
+        console.log('Priority fee estimate:', estimate);
+        priorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: estimate.priorityFeeEstimate,
+        });
+      } else {
+        priorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 10000,
+        });
+      }
       
       // Update transaction with fresh blockhash
       const messageV0 = pendingTx.message;

@@ -1,4 +1,4 @@
-import { Connection, VersionedTransaction, SendTransactionError } from '@solana/web3.js';
+import { Connection, VersionedTransaction, SendTransactionError, Keypair } from '@solana/web3.js';
 
 interface SwapResult {
   txid: string;
@@ -8,31 +8,34 @@ interface SwapResult {
 
 export async function executeSwap(
   transaction: VersionedTransaction,
-  connection: Connection
+  connection: Connection,
+  wallet: Keypair
 ): Promise<SwapResult> {
   try {
-    console.log('executeSwap - Transaction before signing:', {
-      signatures: transaction.signatures,
-      numSignatures: transaction.signatures.length,
-      requiresSignatures: transaction.message.header.numRequiredSignatures
-    });
+
+    transaction.sign([wallet]);
 
     // Verify transaction is properly signed
     if (!transaction.signatures[0] || transaction.signatures[0].every(byte => byte === 0)) {
       throw new Error('Transaction not properly signed');
     }
 
-    const txid = await connection.sendTransaction(transaction, {
-      skipPreflight: false,
+    const latestBlockhash = await connection.getLatestBlockhash();
+    //apply latest blockhash to transaction
+    console.log('transaction blockhash', transaction.message.recentBlockhash);
+    console.log('latestBlockhash', latestBlockhash.blockhash);
+    transaction.message.recentBlockhash = latestBlockhash.blockhash;
+
+    console.log('transaction', transaction);
+    const rawTransaction = transaction.serialize()
+
+    const txid = await connection.sendRawTransaction(rawTransaction, {
+      skipPreflight: true,
       preflightCommitment: 'confirmed',
-      maxRetries: 3
+      maxRetries: 2
     });
 
     console.log('executeSwap - Transaction sent with ID:', txid);
-    
-    // Use newer confirmation API
-    const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-    console.log('executeSwap - Using blockhash:', latestBlockhash);
 
     const confirmation = await connection.confirmTransaction({
       signature: txid,

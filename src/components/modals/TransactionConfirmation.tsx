@@ -81,17 +81,17 @@ export const TransactionConfirmation = ({
   if (!transaction) return null;
 
   return (
-    <div className="card cyberpunk w-full">
+    <div className="card cyberpunk w-full max-w-[480px] min-h-[480px]">
       <h2 className="cyberpunk text-xl mb-4">Confirm Transaction</h2>
       
       {loading ? (
-        <div className="text-center text-sol-text py-4">
+        <div className="text-center text-sol-text py-4 flex-1 flex items-center justify-center">
           Loading transaction details...
         </div>
       ) : error ? (
         <div className="text-sol-error py-4">{error}</div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full">
           {/* Transaction Details */}
           <div className="border border-sol-green/20 rounded p-4 space-y-2">
             <div className="flex justify-between">

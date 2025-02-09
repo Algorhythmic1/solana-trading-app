@@ -25,6 +25,7 @@ export async function getSwapQuote(
   url.searchParams.append('outputMint', actualOutputMint);
   url.searchParams.append('amount', amount.toString());
   url.searchParams.append('slippageBps', Math.round(slippage * 100).toString());
+  url.searchParams.append('restrictIntermediateTokens', 'true');
 
   try {
     const response = await fetch(url);
