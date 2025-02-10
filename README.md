@@ -1,4 +1,4 @@
-# Tauri + React + Typescript
+# SOL Edge Browser
 
 <img src="/src-tauri/icons/Square107x107Logo.png" alt="SOL Edge Browser" width="100" height="100">
 
