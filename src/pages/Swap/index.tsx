@@ -7,7 +7,6 @@ import type { TokenWithBalance, JupiterQuote } from '../../types';
 import { Connection, VersionedTransaction } from '@solana/web3.js';
 import { QuoteDetails } from '../../components/modals/QuoteDetails';
 import { executeSwap } from '../../utils/executeSwap';
-import { TransactionConfirmation } from '../../components/modals/TransactionConfirmation';
 import { fetchTokenBalances } from '../../utils/fetchTokenBalances';
 import { useOutletContext } from 'react-router-dom';
 import type { ContextType } from '../../types';
@@ -27,8 +26,6 @@ export const SwapPage = () => {
   const [isCustomSlippage, setIsCustomSlippage] = useState(false);
   const [quote, setQuote] = useState<JupiterQuote | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [transaction, setTransaction] = useState<VersionedTransaction | null>(null);
-  const [nativeSolBalance, setNativeSolBalance] = useState<number | null>(null);
   const [transactionResult, setTransactionResult] = useState<TransactionResult | null>(null);
 
   const slippagePresets = [0.1, 0.3, 1.0];
@@ -81,35 +78,32 @@ export const SwapPage = () => {
       );
     }
 
-    if (!transaction || !fromToken || !toToken || !quote) return null;
+    if (!fromToken || !toToken || !quote) return null;
 
     return (
-      <TransactionConfirmation
-        transaction={transaction}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={handleConfirmSwap}
-        expectedChanges={{
-          sol: 0,
-          currentSolBalance: nativeSolBalance || 0,
-          tokens: [
-            {
-              mint: fromToken.address,
-              symbol: fromToken.symbol,
-              amount: -Number(fromAmount),
-              decimals: fromToken.decimals,
-              currentBalance: Number(fromToken.balance) / Math.pow(10, fromToken.decimals)
-            },
-            {
-              mint: toToken.address,
-              symbol: toToken.symbol,
-              amount: Number(quote.outAmount) / Math.pow(10, toToken.decimals),
-              decimals: toToken.decimals,
-              currentBalance: Number(toToken.balance) / Math.pow(10, toToken.decimals)
-            }
-          ]
-        }}
-        connection={new Connection(selectedNetwork.endpoint, 'confirmed')}
-      />
+      <div className="card cyberpunk w-full max-w-[480px]">
+        <h2 className="cyberpunk text-xl mb-4">Review Swap</h2>
+        <QuoteDetails 
+          quote={quote}
+          fromSymbol={fromToken.symbol}
+          toSymbol={toToken.symbol}
+        />
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={() => setShowConfirmation(false)}
+            className="cyberpunk modal-btn flex-1"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirmSwap}
+            className="cyberpunk modal-btn flex-1"
+            style={{ '--button-text-color': 'var(--sol-green)' } as React.CSSProperties}
+          >
+            Confirm Swap
+          </button>
+        </div>
+      </div>
     );
   };
 
@@ -186,8 +180,7 @@ export const SwapPage = () => {
       try {
         await fetchTokenBalances({
           wallet,
-          selectedNetwork,
-          setBalance: setNativeSolBalance
+          selectedNetwork
         });
       } catch (error) {
         console.error('Failed to fetch balances:', error);
@@ -225,7 +218,7 @@ export const SwapPage = () => {
             dynamicSlippage: true,
             prioritizationFeeLamports: {
               priorityLevelWithMaxLamports: {
-                maxLamports: 10000,
+                maxLamports: 100_000,
                 priorityLevel: "medium"
               }
             }
@@ -248,7 +241,7 @@ export const SwapPage = () => {
     const connection = new Connection(selectedNetwork.endpoint, 'confirmed');
     
     try {
-      const result = await executeSwap(transaction, connection);
+      const result = await executeSwap(swapTransaction, connection, wallet);
       setTransactionResult({
         signature: result.txid,
         success: result.success,
@@ -256,7 +249,6 @@ export const SwapPage = () => {
         network: selectedNetwork.name
       });
       if (result.success) {
-        setTransaction(null);
         setFromAmount('');
         setToAmount('');
       }
@@ -270,7 +262,17 @@ export const SwapPage = () => {
     } finally {
       setStatus('complete');
     }
-  };
+  } catch (error) {
+    console.error('Failed to prepare swap:', error);
+    setTransactionResult({
+      signature: '',
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to prepare swap',
+      network: selectedNetwork.name
+    });
+    setStatus('complete');
+  }
+};
 
   return (
     <div className="container mx-auto p-4 bg-dark-bg">

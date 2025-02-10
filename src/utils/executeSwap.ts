@@ -20,11 +20,8 @@ export async function executeSwap(
       throw new Error('Transaction not properly signed');
     }
 
-    const latestBlockhash = await connection.getLatestBlockhash();
     //apply latest blockhash to transaction
     console.log('transaction blockhash', transaction.message.recentBlockhash);
-    console.log('latestBlockhash', latestBlockhash.blockhash);
-    transaction.message.recentBlockhash = latestBlockhash.blockhash;
 
     console.log('transaction', transaction);
     const rawTransaction = transaction.serialize()
@@ -36,6 +33,8 @@ export async function executeSwap(
     });
 
     console.log('executeSwap - Transaction sent with ID:', txid);
+
+    const latestBlockhash = await connection.getLatestBlockhash();
 
     const confirmation = await connection.confirmTransaction({
       signature: txid,
