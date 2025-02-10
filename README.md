@@ -1,5 +1,7 @@
 # Tauri + React + Typescript
 
+<img src="/src-tauri/icons/Square107x107Logo.png" alt="SOL Edge Browser" width="100" height="100">
+
 This app contains some simple utilities for interacting with the Solana blockchain. It is built with Tauri, React, and Typescript, and is intended to be used as a desktop app.
 
 It has been tested on MacOS and Windows 11. There are bugs with IPC permissions on Linux outstanding the current version but it is intended to be fully cross-platform (eventually).
