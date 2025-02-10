@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export type ThemeName = 'cyberpunk' | 'solana' | 'matrix';
+export type ThemeName = 'cyberpunk' | 'solana';
 
 export const useTheme = () => {
   const [theme, setTheme] = useState<ThemeName>(() => 

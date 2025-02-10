@@ -8,7 +8,6 @@ import type { ContextType } from '../../types';
 const THEME_OPTIONS = [
   { name: 'Cyberpunk', id: 'cyberpunk' },
   { name: 'Solana', id: 'solana' },
-  { name: 'Matrix', id: 'matrix' },
 ] as const;
 
 

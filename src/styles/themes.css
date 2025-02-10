@@ -35,16 +35,3 @@
   --sol-accent: #ff00ff;
   --sol-error: #ff0066;
 }
-
-/* Matrix theme */
-[data-theme='matrix'] {
-  --sol-green: #00ff00;
-  --sol-bright-green: #51ff00;
-  --sol-green-opacity: #00ff0042;
-  --sol-background: rgb(0,0,0,0.5);
-  --sol-card: #001100;
-  --sol-text: #00ff00;
-  --sol-border: #003300;
-  --sol-accent: #66ff66;
-  --sol-error: #ff0000;
-}
