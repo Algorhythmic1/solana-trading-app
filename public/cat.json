@@ -1,0 +1,6 @@
+{
+	"name": "Cat Token",
+	"symbol": "CAT",
+	"description": "Meow meow meow meow",
+	"image": "https://github.com/Algorhythmic1/solana-trading-app/blob/26b23830ec659fefbd2e314dc7f3c48d9767fdc3/public/cat_icon.png?raw=true"
+}
